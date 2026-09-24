@@ -22,7 +22,7 @@ export async function POST(request) {
     return NextResponse.json({ public_url: `${new URL(request.url).origin}/api/mock-media/${id}` });
   }
 
-  const auth = resolveAuth(request);
+  const auth = await resolveAuth(request);
   if (auth.error) return NextResponse.json({ detail: auth.error, code: auth.code }, { status: auth.status });
 
   const presign = await forward({

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { cancelJob, clearFinished, removeJob, toggleFavorite, useJobs } from '@/lib/jobs';
+import { archiveJob, cancelJob, clearFinished, removeJob, toggleFavorite, useJobs, withArchive } from '@/lib/jobs';
+import { useAuth } from '@/lib/auth';
 import { statusLabel, friendlyError } from '@/lib/errors';
 import { TERMINAL } from '@/lib/schema';
 import { workflowLabel } from '@/lib/catalog';
@@ -55,11 +56,17 @@ function useNow(active) {
   return now;
 }
 
-function Frame({ job, index, now, onReuse, onUseAsInput, onOpen }) {
+function Frame({ job, index, now, onReuse, onUseAsInput, onOpen, loggedIn }) {
   const done = TERMINAL.has(job.status) || job.status === 'error';
   const ok = job.status === 'completed';
   const [cancelError, setCancelError] = useState(null);
-  const expired = ok && now - job.createdAt > WEEK;
+  const [saving, setSaving] = useState(false);
+  const expired = ok && !job.saved && now - job.createdAt > WEEK;
+  async function save() {
+    setSaving(true);
+    setCancelError(null);
+    try { await archiveJob(job.localId); } catch (e) { setCancelError(friendlyError(e)); } finally { setSaving(false); }
+  }
   const ratio = job.payload?.aspect_ratio && /^\d+:\d+$/.test(job.payload.aspect_ratio) ? job.payload.aspect_ratio.replace(':', ' / ') : job.output === 'video' ? '16 / 9' : '1 / 1';
   return (
     <article className={`frame status-${job.status}`} style={{ '--i': index }}>
@@ -88,10 +95,11 @@ function Frame({ job, index, now, onReuse, onUseAsInput, onOpen }) {
           <b>{job.family}</b>
           <span className="dim">{workflowLabel(job.workflow)}</span>
         </div>
-        {(job.label || job.estimate || job.then) && (
+        {(job.label || job.estimate || job.then || job.saved) && (
           <div className="frame-tags">
             {job.label && <span className="ftag">{job.label}</span>}
             {job.then && <span className="ftag ftag-flow">{job.chainedTo ? 'Animación lanzada' : 'Se animará al terminar'}</span>}
+            {job.saved && <span className="ftag ftag-saved">☁ En tu nube</span>}
             {job.estimate && <span className="ftag ftag-cost">≈ {Number(job.estimate.credits).toFixed(2)} cr</span>}
           </div>
         )}
@@ -111,6 +119,9 @@ function Frame({ job, index, now, onReuse, onUseAsInput, onOpen }) {
             <button type="button" onClick={() => onUseAsInput(job.outputs[0])} title={job.outputs[0]?.type === 'image' ? 'Animar esta imagen' : 'Transformar este video'}>
               {job.outputs[0]?.type === 'image' ? 'Animar →' : 'Transformar →'}
             </button>
+          )}
+          {ok && loggedIn && !job.saved && (
+            <button type="button" onClick={save} disabled={saving} title="Los archivos de Higgsfield caducan a los 7 días">{saving ? 'Guardando…' : '☁ Guardar'}</button>
           )}
           <button type="button" onClick={() => onReuse(job)}>Reusar</button>
           {done && <button type="button" className="dim" onClick={() => removeJob(job.localId)} aria-label="Eliminar del historial">×</button>}
@@ -149,7 +160,9 @@ function Lightbox({ job, index, onClose }) {
 }
 
 export default function Gallery({ studio, onReuse, onUseAsInput }) {
-  const jobs = useJobs();
+  const rawJobs = useJobs();
+  const jobs = useMemo(() => rawJobs.map(withArchive), [rawJobs]);
+  const { session } = useAuth();
   const [scope, setScope] = useState('studio');
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(null);
@@ -189,7 +202,7 @@ export default function Gallery({ studio, onReuse, onUseAsInput }) {
       ) : (
         <div className="contact-sheet">
           {shown.map((job, i) => (
-            <Frame key={job.localId} job={job} index={shown.length - 1 - i} now={now}
+            <Frame key={job.localId} job={job} loggedIn={Boolean(session)} index={shown.length - 1 - i} now={now}
               onReuse={onReuse} onUseAsInput={onUseAsInput} onOpen={(j, k) => setOpen({ job: j, index: k })} />
           ))}
         </div>

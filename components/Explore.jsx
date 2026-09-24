@@ -1,7 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { familiesForStudio, FEATURED } from '@/lib/catalog';
-import { useJobs } from '@/lib/jobs';
+import { useJobs, withArchive } from '@/lib/jobs';
 import { BRAND } from '@/lib/brand';
 
 const KIND = { image: 'Imagen', video: 'Video', transform: 'Transformar' };
@@ -71,7 +71,7 @@ export default function Explore({ onOpen }) {
     const family = groups.find((g) => g.studio === f.studio)?.families.find((x) => x.id === f.family);
     return family ? { ...f, family } : null;
   }).filter(Boolean), [groups]);
-  const creations = useMemo(() => jobs.filter((j) => j.status === 'completed')
+  const creations = useMemo(() => jobs.map(withArchive).filter((j) => j.status === 'completed')
     .flatMap((j) => j.outputs.filter((o) => o.type !== 'audio').map((o) => ({ ...o, job: j }))).slice(0, 24), [jobs]);
   const total = groups.reduce((n, g) => n + g.families.reduce((m, f) => m + f.models.length, 0), 0);
 

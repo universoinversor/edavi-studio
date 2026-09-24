@@ -570,3 +570,10 @@ input[type='range']::-moz-range-thumb { width: 14px; height: 14px; border: 0; bo
   .gallery-search { width: 100% !important; }
   .gallery-tools { flex-wrap: wrap; }
 }
+
+.ftag-saved { background: rgba(126, 226, 168, 0.12); color: var(--ok); }
+
+.user-pill { width: 34px; height: 34px; border-radius: 50%; border: 0; background: linear-gradient(135deg, var(--accent), var(--accent-deep)); color: #fff; font-weight: 700; }
+.user-pill:hover { box-shadow: 0 0 0 2px var(--accent-hi); }
+.login .login-lead { margin: 0; }
+.login .sheet-foot .cta { width: 100%; }

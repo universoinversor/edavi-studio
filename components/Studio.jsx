@@ -10,6 +10,8 @@ import Gallery from './Gallery';
 import CharactersStudio from './CharactersStudio';
 import SettingsModal from './SettingsModal';
 import Explore from './Explore';
+import LoginModal from './LoginModal';
+import { authEnabled, signOut, useAuth } from '@/lib/auth';
 
 const PREFS_KEY = 'edavi.prefs';
 const SOUL_BY_VERSION = { v2: 'soul-2/generate', v1: 'soul-standard/generate', cinema: 'soul-cinema/generate' };
@@ -39,6 +41,8 @@ export default function Studio() {
   const [health, setHealth] = useState(null);
   const [settings, setSettings] = useState({ open: false, reason: null });
   const [hasOwnKey, setHasOwnKey] = useState(false);
+  const [login, setLogin] = useState({ open: false, reason: null });
+  const { session } = useAuth();
   const jobs = useJobs();
   const running = jobs.filter((j) => j.studio && !TERMINAL.has(j.status) && j.status !== 'error');
 
@@ -55,10 +59,13 @@ export default function Studio() {
     getHealth().then(setHealth).catch(() => setHealth({ mock: false, serverCredentials: false }));
     const syncKey = () => setHasOwnKey(Boolean(loadSettings().credentials));
     syncKey();
-    const onAuth = (e) => setSettings({
-      open: true,
-      reason: e.detail?.code === 'password' ? 'Introduce la contraseña del estudio para poder generar.' : 'Higgsfield rechazó las credenciales. Revisa tu clave.',
-    });
+    const onAuth = (e) => {
+      if (e.detail?.code === 'login') { setLogin({ open: true, reason: 'Inicia sesión para generar.' }); return; }
+      setSettings({
+        open: true,
+        reason: e.detail?.code === 'password' ? 'Introduce la contraseña del estudio para poder generar.' : 'Revisa tu clave de Higgsfield.',
+      });
+    };
     window.addEventListener('edavi:settings', syncKey);
     window.addEventListener('edavi:auth-required', onAuth);
     return () => {
@@ -110,7 +117,8 @@ export default function Studio() {
     .filter((j) => j.status === 'completed' && j.estimate && new Date(j.createdAt).toDateString() === today)
     .reduce((sum, j) => sum + Number(j.estimate.credits || 0), 0);
 
-  const needsKey = health && !health.mock && !health.serverCredentials && !hasOwnKey;
+  const needsLogin = health?.loginRequired && !session;
+  const needsKey = health && !health.mock && !health.loginRequired && !health.serverCredentials && !hasOwnKey;
   const current = STUDIOS.find((s) => s.id === studio);
 
   return (
@@ -135,11 +143,23 @@ export default function Studio() {
           {health?.mock && <span className="badge">DEMO</span>}
           {spentToday > 0 && <span className="spent" title="Estimación de créditos usados hoy en este navegador">≈ {spentToday.toFixed(1)} cr hoy</span>}
           <button type="button" className="pill-btn" onClick={() => setSettings({ open: true, reason: null })}>Ajustes</button>
+          {authEnabled && (session ? (
+            <button type="button" className="user-pill" onClick={() => window.confirm(`¿Cerrar la sesión de ${session.user.email}?`) && signOut()} title={`${session.user.email} · cerrar sesión`}>
+              {(session.user.email || '?')[0].toUpperCase()}
+            </button>
+          ) : (
+            <button type="button" className="pill-btn" onClick={() => setLogin({ open: true, reason: null })}>Entrar</button>
+          ))}
           <button type="button" className="cta small" onClick={() => openFromExplore(studio === 'explore' || studio === 'characters' ? 'image' : studio)}>Crear</button>
         </div>
       </header>
 
       <main className={`stage stage-${studio}`}>
+        {needsLogin && (
+          <button type="button" className="notice notice-action" onClick={() => setLogin({ open: true, reason: null })}>
+            <b>Inicia sesión para crear.</b> Tu historial y tus archivos se guardan en tu nube y los ves desde cualquier dispositivo. →
+          </button>
+        )}
         {needsKey && (
           <button type="button" className="notice notice-action" onClick={() => setSettings({ open: true, reason: null })}>
             <b>Conecta Higgsfield para empezar.</b> Añade tu clave (KEY_ID:KEY_SECRET) en Ajustes, o configura <code>HF_API_KEY_ID</code> y <code>HF_API_KEY_SECRET</code> en el servidor. →
@@ -172,6 +192,7 @@ export default function Studio() {
         <span className="dim">Funciona con la API de Higgsfield</span>
       </footer>
 
+      {login.open && <LoginModal reason={login.reason} onClose={() => setLogin({ open: false, reason: null })} />}
       {settings.open && <SettingsModal health={health} reason={settings.reason} onClose={() => setSettings({ open: false, reason: null })} />}
     </div>
   );

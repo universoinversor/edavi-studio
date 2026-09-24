@@ -30,7 +30,7 @@ async function handle(request, { params }, method) {
     return status === 202 ? new NextResponse(null, { status }) : NextResponse.json(data, { status });
   }
 
-  const auth = resolveAuth(request);
+  const auth = await resolveAuth(request);
   if (auth.error) return NextResponse.json({ detail: auth.error, code: auth.code }, { status: auth.status });
 
   // Solo las consultas de listados aceptan parámetros; nada de webhooks arbitrarios.
