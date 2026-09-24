@@ -1,0 +1,28 @@
+{
+  "name": "edavi-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EDAVI Studio — estudio de generación de imagen y video con IA, impulsado por la API de Higgsfield.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "dev:mock": "cross-env HF_MOCK=1 next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --test tests/",
+    "sync:catalog": "node scripts/sync-catalog.mjs"
+  },
+  "dependencies": {
+    "next": "^15.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
