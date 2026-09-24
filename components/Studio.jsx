@@ -9,6 +9,7 @@ import Composer from './Composer';
 import Gallery from './Gallery';
 import CharactersStudio from './CharactersStudio';
 import SettingsModal from './SettingsModal';
+import Explore from './Explore';
 
 const PREFS_KEY = 'edavi.prefs';
 const SOUL_BY_VERSION = { v2: 'soul-2/generate', v1: 'soul-standard/generate', cinema: 'soul-cinema/generate' };
@@ -33,7 +34,7 @@ function pickModelFor(studio, currentModelId, inputKey, fallbackId) {
 }
 
 export default function Studio() {
-  const [studio, setStudio] = useState('image');
+  const [studio, setStudio] = useState('explore');
   const [seeds, setSeeds] = useState(initialSeeds);
   const [health, setHealth] = useState(null);
   const [settings, setSettings] = useState({ open: false, reason: null });
@@ -43,7 +44,7 @@ export default function Studio() {
 
   useEffect(() => {
     const prefs = readPrefs();
-    if (prefs.studio) setStudio(prefs.studio);
+    if (prefs.studio && STUDIOS.some((x) => x.id === prefs.studio)) setStudio(prefs.studio);
     if (prefs.models) {
       setSeeds((s) => {
         const next = { ...s };
@@ -99,55 +100,63 @@ export default function Studio() {
     }
   }, [plant, seeds]);
 
+  const openFromExplore = useCallback((studioId, modelId, values) => {
+    if (studioId === 'characters') return goStudio(studioId);
+    plant(studioId, modelId || seeds[studioId].modelId, values || {});
+  }, [goStudio, plant, seeds]);
+
   const needsKey = health && !health.mock && !health.serverCredentials && !hasOwnKey;
   const current = STUDIOS.find((s) => s.id === studio);
 
   return (
     <div className="app">
-      <aside className="rail" aria-label="Estudios">
-        <div className="brand">
+      <header className="topbar">
+        <button type="button" className="brand" onClick={() => goStudio('explore')} aria-label={`${BRAND.name}: inicio`}>
           <span className="brand-mark" aria-hidden />
           <span className="brand-name">{BRAND.name}</span>
-          <span className="brand-sub mono">{BRAND.tagline}</span>
-        </div>
-        <nav className="studio-nav">
+        </button>
+        <nav className="studio-nav" aria-label="Estudios">
           {STUDIOS.map((s) => {
             const count = running.filter((j) => j.studio === s.id).length;
             return (
               <button type="button" key={s.id} className={`studio-tab ${studio === s.id ? 'on' : ''}`} onClick={() => goStudio(s.id)} aria-current={studio === s.id ? 'page' : undefined}>
-                <span className="mono">{s.kicker}</span>
-                <span>{s.label}</span>
+                {s.label}
                 {count > 0 && <i className="dot" title={`${count} en proceso`}>{count}</i>}
               </button>
             );
           })}
         </nav>
-        <div className="rail-foot">
-          {health?.mock && <span className="badge mono">DEMO</span>}
-          <button type="button" className="ghost-btn" onClick={() => setSettings({ open: true, reason: null })}>Ajustes</button>
+        <div className="topbar-actions">
+          {health?.mock && <span className="badge">DEMO</span>}
+          <button type="button" className="pill-btn" onClick={() => setSettings({ open: true, reason: null })}>Ajustes</button>
+          <button type="button" className="cta small" onClick={() => openFromExplore(studio === 'explore' || studio === 'characters' ? 'image' : studio)}>Crear</button>
         </div>
-      </aside>
+      </header>
 
-      <main className="stage">
-        <header className="stage-head">
-          <p className="mono dim">{current.kicker} / {current.label.toUpperCase()}</p>
-          <h1>{current.label}<em>.</em></h1>
-          <p className="stage-blurb">{current.blurb}</p>
-        </header>
-
+      <main className={`stage stage-${studio}`}>
         {needsKey && (
           <button type="button" className="notice notice-action" onClick={() => setSettings({ open: true, reason: null })}>
             <b>Conecta Higgsfield para empezar.</b> Añade tu clave (KEY_ID:KEY_SECRET) en Ajustes, o configura <code>HF_API_KEY_ID</code> y <code>HF_API_KEY_SECRET</code> en el servidor. →
           </button>
         )}
 
-        {studio === 'characters' ? (
-          <CharactersStudio onUse={(c) => plant('image', SOUL_BY_VERSION[c.model_version] || SOUL_BY_VERSION.v2, { custom_reference_id: c.id })} />
+        {studio === 'explore' ? (
+          <Explore onOpen={openFromExplore} />
         ) : (
-          <div className="workspace">
-            <Composer key={studio} studio={studio} seed={seeds[studio]} onModelChange={(id) => rememberModel(studio, id)} />
-            <Gallery studio={studio} onReuse={onReuse} onUseAsInput={onUseAsInput} />
-          </div>
+          <>
+            <header className="stage-head">
+              <h1>{current.label}</h1>
+              <p className="stage-blurb">{current.blurb}</p>
+            </header>
+            {studio === 'characters' ? (
+              <CharactersStudio onUse={(c) => plant('image', SOUL_BY_VERSION[c.model_version] || SOUL_BY_VERSION.v2, { custom_reference_id: c.id })} />
+            ) : (
+              <div className="workspace">
+                <Composer key={studio} studio={studio} seed={seeds[studio]} onModelChange={(id) => rememberModel(studio, id)} />
+                <Gallery studio={studio} onReuse={onReuse} onUseAsInput={onUseAsInput} />
+              </div>
+            )}
+          </>
         )}
       </main>
 

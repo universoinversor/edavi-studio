@@ -71,7 +71,7 @@ function Frame({ job, index, now, onReuse, onUseAsInput, onOpen }) {
 
       <div className={`frame-media ${job.outputs.length > 1 ? 'multi' : ''}`} style={{ aspectRatio: job.outputs.length > 1 ? undefined : ratio }}>
         {ok && job.outputs.map((o, i) => <Media key={o.url + i} output={o} onOpen={() => onOpen(job, i)} />)}
-        {!done && <div className="developing"><i /><span className="mono">{job.status === 'local_queue' ? 'esperando turno' : 'revelando'}</span></div>}
+        {!done && <div className="developing"><i /><span className="mono">{job.status === 'local_queue' ? 'esperando turno' : 'generando'}</span></div>}
         {done && !ok && (
           <div className="frame-failed">
             <b>{statusLabel(job.status)}</b>
@@ -151,8 +151,8 @@ export default function Gallery({ studio, onReuse, onUseAsInput }) {
   return (
     <section className="gallery" aria-label="Resultados">
       <header className="gallery-head">
-        <h2>Hoja de contactos</h2>
-        <span className="mono dim">{running ? `${running} en proceso` : `${shown.length} tomas`}</span>
+        <h2>Mis generaciones</h2>
+        <span className="mono dim">{running ? `${running} en proceso` : `${shown.length} ${shown.length === 1 ? "resultado" : "resultados"}`}</span>
         <div className="gallery-tools">
           <div className="seg">
             <button type="button" className={scope === 'studio' ? 'on' : ''} onClick={() => setScope('studio')}>Este estudio</button>
@@ -167,8 +167,8 @@ export default function Gallery({ studio, onReuse, onUseAsInput }) {
       {shown.length === 0 ? (
         <div className="empty">
           <div className="empty-frame" aria-hidden><span /><span /><span /></div>
-          <p className="empty-title">La película está virgen.</p>
-          <p className="dim">Escribe un prompt y pulsa <b>Revelar</b>. Tus tomas aparecerán aquí y se guardan en este navegador.</p>
+          <p className="empty-title">Aún no hay nada aquí</p>
+          <p className="dim">Escribe un prompt y pulsa <b>Generar</b>. Tus resultados aparecerán aquí y se guardan en este navegador.</p>
         </div>
       ) : (
         <div className="contact-sheet">

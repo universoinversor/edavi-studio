@@ -190,7 +190,7 @@ export default function Composer({ studio, seed, onModelChange }) {
       <footer className="generate-bar">
         <div className="mono dim endpoint" title={model.endpoint}>{model.endpoint}</div>
         <button type="button" className={`generate ${flash ? 'flash' : ''}`} onClick={generate} disabled={uploading}>
-          <span>{uploading ? 'Subiendo…' : flash ? 'En el revelador' : 'Revelar'}</span>
+          <span>{uploading ? 'Subiendo…' : flash ? '¡Enviado!' : 'Generar'}</span>
           <kbd className="mono">Ctrl ↵</kbd>
         </button>
       </footer>
