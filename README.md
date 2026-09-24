@@ -1,30 +1,53 @@
 # EDAVI Studio
 
-Estudio de generación de **imagen y video con IA** conectado a la [API de Higgsfield](https://docs.higgsfield.ai/docs).
-Tiene 81 endpoints de generación (SOUL, Seedance, Kling, Wan, MiniMax, LTX, PixVerse, Recraft, Qwen, Ideogram, Grok, Cinema Studio y otros) y el entrenamiento de personajes Soul ID.
+**Estudio creativo de imagen y video con IA, conectado a la [API de Higgsfield](https://docs.higgsfield.ai/docs).**
+Creado por **EDAVI**. Código abierto, en español, listo para conectar tu clave y crear.
 
-## Qué incluye
+> Si usas, copias o publicas este proyecto (o una versión modificada), **debes dar crédito a EDAVI**. Consulta [Crédito y licencia](#crédito-y-licencia).
 
-- **4 estudios**: Imagen, Video, Transformar (editar, extender o transferir movimiento) y Personajes (Soul ID).
-- **Formularios automáticos**: cada modelo pinta sus controles a partir de su JSON Schema oficial. Así nunca se envía un parámetro que el modelo no acepte.
-- **Validación previa** en español, con las reglas condicionales de cada modelo (por ejemplo, las tomas múltiples de Kling, las referencias de Seedance o los presets de Marketing Studio).
-- **Subida de archivos** mediante URL prefirmada de Higgsfield. Si el navegador no puede subir directamente, la subida pasa por tu servidor. Las imágenes en formatos no admitidos se convierten a PNG automáticamente.
-- **Cola inteligente**: sigue cada trabajo con backoff (de 2 s hasta 10 s), se reanuda si recargas la página y, cuando alcanzas el límite de concurrencia de tu cuenta, reenvía el trabajo en cuanto termina otro.
-- **Hoja de contactos**: historial local con descarga, vista ampliada, cancelar, «Reusar» (recupera modelo y parámetros), «Animar →» (de imagen a video) y «Transformar →» (de video a edición).
-- **Seguridad**: las credenciales viven en el servidor, como exige Higgsfield. El proxy solo deja pasar rutas conocidas y puedes protegerlo con una contraseña.
-- **Modo demo** para probar toda la interfaz sin gastar créditos.
+---
 
-## Puesta en marcha
+## Qué puedes hacer
 
-Necesitas Node.js 20 o superior.
+**81 modelos de Higgsfield en un solo lugar:** SOUL V2, SOUL Cinema, Soul ID, Seedance 2.0/2.5, Kling 2.5/2.6/3.0/O3/Omni, Motion Control, Wan 2.6/2.7/3.0, MiniMax H3, Hailuo, LTX-2.5, PixVerse V6, Cinema Studio 4.0, Genjutsu, Recraft, Qwen Image 3, Ideogram 4, Grok, Z-Image y Marketing Studio.
+
+| Estudio | Para qué sirve |
+| --- | --- |
+| **Explorar** | Portada con destacados, catálogo filtrable de modelos y galería de tus creaciones |
+| **Imagen** | Retratos, producto, carteles y edición con referencias |
+| **Video** | De texto, imagen o referencias a video, con audio nativo |
+| **Transformar** | Editar, extender o transferir movimiento a un video |
+| **Personajes** | Entrenar un Soul ID con tus fotos y usarlo en SOUL |
+
+### Lo que añade EDAVI encima de la API
+
+- **💰 Costo en vivo:** antes de generar ves cuántos créditos y dólares costará, con el endpoint oficial `/estimate`.
+- **🎲 Variaciones ×1–×4:** varias versiones de un mismo prompt; cada una recibe una semilla distinta automáticamente.
+- **⚖️ Comparar modelos:** el mismo prompt en hasta 4 modelos a la vez; solo aparecen los compatibles con lo que ya rellenaste.
+- **🔗 Flujos automáticos:** «animar al terminar». Generas una imagen y, cuando está lista, se envía sola a un modelo de video.
+- **✦ Inspiración:** prompts de ejemplo en español para cada estudio.
+- **⭐ Historial inteligente:** favoritos, búsqueda, créditos gastados hoy, «Reusar», «Animar →» y «Transformar →».
+- **🧠 Formularios automáticos:** cada modelo dibuja sus controles a partir de su JSON Schema oficial y se valida en español antes de gastar créditos.
+- **🔁 Cola resistente:** sigue cada trabajo con backoff, se reanuda si recargas y, si llegas al límite de concurrencia, reenvía cuando hay hueco.
+- **📤 Subidas fáciles:** arrastra archivos; las imágenes en formatos no admitidos se convierten solas a PNG.
+- **🔒 Seguro:** tus claves viven en el servidor, el proxy solo permite rutas conocidas y puedes protegerlo con contraseña.
+- **🧪 Modo demo:** prueba toda la interfaz sin gastar créditos.
+
+## Empezar en 3 pasos
+
+Necesitas Node.js 20 o superior y una cuenta en [console.higgsfield.ai](https://console.higgsfield.ai).
 
 ```bash
+git clone https://github.com/universoinversor/edavi-studio.git
+cd edavi-studio
 npm install
-cp .env.example .env.local   # y rellena tus claves
-npm run dev                  # http://localhost:3000
 ```
 
-Para probar sin claves y sin gastar créditos:
+1. Copia `.env.example` a `.env.local`.
+2. Pega tu clave de Higgsfield en `HF_API_KEY_ID` y `HF_API_KEY_SECRET`.
+3. Ejecuta `npm run dev` y abre http://localhost:3000.
+
+¿Sin clave todavía? Prueba el modo demo:
 
 ```bash
 npm run dev:mock
@@ -36,48 +59,59 @@ En modo demo, un prompt que contenga la palabra `fail` simula una generación fa
 
 | Variable | Para qué sirve |
 | --- | --- |
-| `HF_API_KEY_ID` / `HF_API_KEY_SECRET` | Tu clave de [console.higgsfield.ai](https://console.higgsfield.ai). Solo se usa en el servidor. |
-| `STUDIO_PASSWORD` | Opcional. Si publicas la app con tus claves, pide esta contraseña antes de generar. **Muy recomendable.** |
+| `HF_API_KEY_ID` / `HF_API_KEY_SECRET` | Tu clave de Higgsfield. Solo se usa en el servidor. |
+| `STUDIO_PASSWORD` | Opcional. Si publicas la app con tus claves, exige esta contraseña para generar. **Muy recomendable.** |
 | `HF_MOCK` | `1` activa el modo demo. |
 
-Si no configuras claves en el servidor, cada persona puede poner la suya en **Ajustes** con el formato `KEY_ID:KEY_SECRET`. Esa clave se guarda solo en su navegador y viaja a tu servidor, que la reenvía a Higgsfield.
+Si el servidor no tiene claves, cada persona puede poner la suya en **Ajustes** (`KEY_ID:KEY_SECRET`). Esa clave se guarda solo en su navegador.
 
 ## Publicar en Vercel
 
-1. Sube el repositorio a GitHub e impórtalo en [vercel.com/new](https://vercel.com/new).
-2. En *Settings → Environment Variables*, añade `HF_API_KEY_ID`, `HF_API_KEY_SECRET` y `STUDIO_PASSWORD`.
-3. Despliega. No hace falta configurar nada más.
+1. Importa el repositorio en [vercel.com/new](https://vercel.com/new).
+2. Añade `HF_API_KEY_ID`, `HF_API_KEY_SECRET` y `STUDIO_PASSWORD` en *Settings → Environment Variables*.
+3. Despliega.
 
-> En Vercel, la ruta de respaldo `/api/upload` acepta archivos de hasta unos 4,5 MB. La subida directa del navegador a Higgsfield no tiene ese límite.
+## Mantenerlo al día
 
-## Actualizar los modelos
-
-Cuando Higgsfield publique modelos nuevos o cambie sus parámetros:
+Cuando Higgsfield publique modelos nuevos o cambie parámetros:
 
 ```bash
 npm run sync:catalog   # regenera lib/catalog.json desde la documentación oficial
-npm test               # comprueba que todos los campos tienen control
+npm test               # comprueba que todo sigue funcionando
 ```
 
 ## Personalizar la marca
 
-- Nombre y lema: `lib/brand.js`
-- Colores, tipografías y estilo: variables al inicio de `app/globals.css`
+- Nombre, autor y enlace: `lib/brand.js`
+- Color morado y estilo: variables `--accent` al inicio de `app/globals.css`
 - Icono: `public/icon.svg`
-- Descripciones de los modelos en español: `lib/descriptions.es.js`
+- Banners y modelos destacados: `components/Explore.jsx` y `FEATURED` en `lib/catalog.js`
+- Prompts de inspiración: `INSPIRATION` en `lib/plan.js`
 
 ## Estructura
 
 ```
 app/api/hf/[...path]   Proxy seguro hacia api.higgsfield.ai (lista blanca de rutas)
-app/api/upload         Subida de respaldo por el servidor
 lib/catalog.json       Catálogo generado: endpoint + JSON Schema de cada modelo
-lib/schema.js          Schema → controles, payload y validación (con pruebas)
-lib/jobs.js            Cola de generaciones, polling y reintentos
-components/            Interfaz: estudios, formularios, galería y ajustes
+lib/schema.js          Schema → controles, payload y validación
+lib/plan.js            Variaciones, comparación, flujos e inspiración
+lib/jobs.js            Cola de generaciones, polling, flujos y reintentos
+components/            Interfaz: Explorar, estudios, formularios y galería
 scripts/sync-catalog   Sincroniza el catálogo con la documentación de Higgsfield
+tests/                 Pruebas (npm test)
 ```
 
-## Licencia y créditos
+## Crédito y licencia
 
-MIT. Proyecto basado en [Open Generative AI](https://github.com/Anil-matcha/Open-Generative-AI) (MIT, © Open Generative AI Contributors), rediseñado y reescrito para la API de Higgsfield. «Higgsfield» y los nombres de los modelos pertenecen a sus respectivos dueños; este proyecto no está afiliado a Higgsfield.
+**© 2026 EDAVI.** Publicado bajo la [licencia MIT](LICENSE).
+
+Puedes usarlo, modificarlo y distribuirlo, **siempre que conserves el aviso de copyright de EDAVI** del archivo `LICENSE` en todas las copias. Así lo exige la licencia MIT.
+
+Además, te pedimos que:
+
+- mantengas visible el crédito «Creado por EDAVI» del pie de la app, o lo menciones en tu README, y
+- enlaces a este repositorio: https://github.com/universoinversor/edavi-studio
+
+Consulta [NOTICE](NOTICE) para el texto de atribución sugerido.
+
+Basado en [Open Generative AI](https://github.com/Anil-matcha/Open-Generative-AI) (MIT, © Open Generative AI Contributors). EDAVI Studio es un proyecto independiente: no está afiliado a Higgsfield. «Higgsfield» y los nombres de los modelos pertenecen a sus respectivos dueños.

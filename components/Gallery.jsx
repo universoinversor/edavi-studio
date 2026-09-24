@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { cancelJob, clearFinished, removeJob, useJobs } from '@/lib/jobs';
+import { cancelJob, clearFinished, removeJob, toggleFavorite, useJobs } from '@/lib/jobs';
 import { statusLabel, friendlyError } from '@/lib/errors';
 import { TERMINAL } from '@/lib/schema';
 import { workflowLabel } from '@/lib/catalog';
@@ -67,6 +67,8 @@ function Frame({ job, index, now, onReuse, onUseAsInput, onOpen }) {
         <span>{String(index + 1).padStart(3, '0')}</span>
         <span className="frame-status">{statusLabel(job.status)}</span>
         {!done && <span>{elapsed(now - job.createdAt)}</span>}
+        <button type="button" className={`fav ${job.favorite ? 'on' : ''}`} onClick={() => toggleFavorite(job.localId)}
+          aria-pressed={job.favorite} aria-label={job.favorite ? 'Quitar de favoritos' : 'Marcar como favorito'}>{job.favorite ? '★' : '☆'}</button>
       </div>
 
       <div className={`frame-media ${job.outputs.length > 1 ? 'multi' : ''}`} style={{ aspectRatio: job.outputs.length > 1 ? undefined : ratio }}>
@@ -86,6 +88,13 @@ function Frame({ job, index, now, onReuse, onUseAsInput, onOpen }) {
           <b>{job.family}</b>
           <span className="dim">{workflowLabel(job.workflow)}</span>
         </div>
+        {(job.label || job.estimate || job.then) && (
+          <div className="frame-tags">
+            {job.label && <span className="ftag">{job.label}</span>}
+            {job.then && <span className="ftag ftag-flow">{job.chainedTo ? 'Animación lanzada' : 'Se animará al terminar'}</span>}
+            {job.estimate && <span className="ftag ftag-cost">≈ {Number(job.estimate.credits).toFixed(2)} cr</span>}
+          </div>
+        )}
         {job.payload?.prompt && <p className="frame-prompt" title={job.payload.prompt}>{job.payload.prompt}</p>}
         {expired && <p className="hint">Higgsfield conserva los archivos al menos 7 días; puede que ya no estén.</p>}
         {cancelError && <p className="field-error">{cancelError}</p>}
@@ -142,8 +151,13 @@ function Lightbox({ job, index, onClose }) {
 export default function Gallery({ studio, onReuse, onUseAsInput }) {
   const jobs = useJobs();
   const [scope, setScope] = useState('studio');
+  const [query, setQuery] = useState('');
   const [open, setOpen] = useState(null);
-  const shown = useMemo(() => (scope === 'all' ? jobs : jobs.filter((j) => j.studio === studio)), [jobs, scope, studio]);
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return jobs.filter((j) => (scope === 'all' || (scope === 'fav' ? j.favorite : j.studio === studio))
+      && (!q || `${j.payload?.prompt || ''} ${j.family}`.toLowerCase().includes(q)));
+  }, [jobs, scope, studio, query]);
   const active = jobs.some((j) => !TERMINAL.has(j.status) && j.status !== 'error');
   const now = useNow(active);
   const running = jobs.filter((j) => !TERMINAL.has(j.status) && j.status !== 'error').length;
@@ -157,9 +171,11 @@ export default function Gallery({ studio, onReuse, onUseAsInput }) {
           <div className="seg">
             <button type="button" className={scope === 'studio' ? 'on' : ''} onClick={() => setScope('studio')}>Este estudio</button>
             <button type="button" className={scope === 'all' ? 'on' : ''} onClick={() => setScope('all')}>Todo</button>
+            <button type="button" className={scope === 'fav' ? 'on' : ''} onClick={() => setScope('fav')}>★ Favoritos</button>
           </div>
+          {jobs.length > 3 && <input type="search" className="gallery-search" placeholder="Buscar…" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar en el historial" />}
           {jobs.some((j) => TERMINAL.has(j.status) || j.status === 'error') && (
-            <button type="button" className="link-btn mono" onClick={() => window.confirm('¿Vaciar del historial todas las tomas terminadas? Los archivos siguen en Higgsfield.') && clearFinished()}>limpiar</button>
+            <button type="button" className="link-btn mono" onClick={() => window.confirm('¿Quitar del historial los resultados terminados? Los favoritos se conservan.') && clearFinished()}>limpiar</button>
           )}
         </div>
       </header>

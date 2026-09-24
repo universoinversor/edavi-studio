@@ -105,6 +105,11 @@ export default function Studio() {
     plant(studioId, modelId || seeds[studioId].modelId, values || {});
   }, [goStudio, plant, seeds]);
 
+  const today = new Date().toDateString();
+  const spentToday = jobs
+    .filter((j) => j.status === 'completed' && j.estimate && new Date(j.createdAt).toDateString() === today)
+    .reduce((sum, j) => sum + Number(j.estimate.credits || 0), 0);
+
   const needsKey = health && !health.mock && !health.serverCredentials && !hasOwnKey;
   const current = STUDIOS.find((s) => s.id === studio);
 
@@ -128,6 +133,7 @@ export default function Studio() {
         </nav>
         <div className="topbar-actions">
           {health?.mock && <span className="badge">DEMO</span>}
+          {spentToday > 0 && <span className="spent" title="Estimación de créditos usados hoy en este navegador">≈ {spentToday.toFixed(1)} cr hoy</span>}
           <button type="button" className="pill-btn" onClick={() => setSettings({ open: true, reason: null })}>Ajustes</button>
           <button type="button" className="cta small" onClick={() => openFromExplore(studio === 'explore' || studio === 'characters' ? 'image' : studio)}>Crear</button>
         </div>
@@ -159,6 +165,12 @@ export default function Studio() {
           </>
         )}
       </main>
+
+      <footer className="site-footer">
+        <span>Creado por <a href={BRAND.repo} target="_blank" rel="noreferrer"><b>{BRAND.author}</b></a></span>
+        <span className="dim">Código abierto · MIT</span>
+        <span className="dim">Funciona con la API de Higgsfield</span>
+      </footer>
 
       {settings.open && <SettingsModal health={health} reason={settings.reason} onClose={() => setSettings({ open: false, reason: null })} />}
     </div>
