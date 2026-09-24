@@ -1,6 +1,7 @@
 import { Anton, Geist, Geist_Mono } from 'next/font/google';
 import { BRAND } from '@/lib/brand';
 import './globals.css';
+import './glass.css';
 
 const display = Anton({ subsets: ['latin'], weight: '400', variable: '--font-display' });
 const body = Geist({ subsets: ['latin'], variable: '--font-body' });

@@ -8,3 +8,6 @@ out/
 .vercel
 .DS_Store
 .next-prod/
+
+.vercel
+.env*
