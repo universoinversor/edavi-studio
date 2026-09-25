@@ -31,6 +31,9 @@ const PATHS = {
   refresh: <><path d="M20 11a8 8 0 1 0-2.3 5.7" /><path d="M20 4v7h-7" /></>,
 };
 
+/**
+ * @param {{ name: string, size?: number, filled?: boolean, className?: string, label?: string }} props
+ */
 export default function Icon({ name, size = 18, filled = false, className = '', label }) {
   return (
     <svg

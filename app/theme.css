@@ -14,7 +14,7 @@
   --ink-rgb: 23, 20, 14;
   --shade-rgb: 236, 231, 219;
   --a-rgb: 184, 137, 42;
-  --a2-rgb: 138, 107, 22;
+  --a2-rgb: 122, 94, 18;
   --bg-rgb: 244, 242, 236;
   --text-2: #3d3a33;
   --on-strong: #14120e;
@@ -23,7 +23,7 @@
   --muted: #6b6760;
   --faint: #9d998f;
   --accent: #b8892a;
-  --accent-hi: #8a6b16;
+  --accent-hi: #7a5e12;
   --accent-deep: #5c4508;
   --accent-soft: rgba(212, 175, 55, 0.16);
   --lilac: #f3e6c0;
@@ -121,7 +121,7 @@
 [data-theme='light'] .art-a .sticker-2 { background: var(--gold-metal); color: #241a04; }
 [data-theme='light'] .art-b { background: linear-gradient(135deg, #ffffff 0%, #f3e6c0 100%); }
 [data-theme='light'] .art-b .sticker-2 { background: var(--gold-metal); color: #241a04; }
-[data-theme='light'] .art-b .sticker-over, [data-theme='light'] .art-b .sticker-sub { color: #8a6b16; }
+[data-theme='light'] .art-b .sticker-over, [data-theme='light'] .art-b .sticker-sub { color: #7a5e12; }
 [data-theme='light'] .art-c { background: repeating-linear-gradient(-35deg, #1c1810 0 22px, #14120e 22px 44px); }
 [data-theme='light'] .art-c .sticker-1 { background: var(--gold-metal); }
 [data-theme='light'] .art-c .sticker-2 { color: #f2d98b; }

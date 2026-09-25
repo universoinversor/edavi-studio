@@ -341,3 +341,15 @@
 
 .cast-card.is-default { box-shadow: inset 0 0 0 1px var(--accent-hi), var(--glass-shadow); }
 .cast-card b { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+
+/* ---------- Estados de la app ---------- */
+
+.state-screen { display: grid; justify-items: center; align-content: center; gap: var(--space-3); min-height: 50vh; padding: var(--space-8) var(--space-4); text-align: center; }
+.state-screen h1, .state-screen h2 { margin: 0; font: 400 clamp(32px, 4vw, 48px)/1 var(--font-display); text-transform: uppercase; }
+.state-screen p { margin: 0; max-width: 46ch; }
+.state-page { min-height: 100vh; min-height: 100dvh; }
+.notice-offline { display: flex; align-items: center; gap: var(--space-2); background: rgba(245, 184, 74, 0.12); box-shadow: inset 0 0 0 1px rgba(245, 184, 74, 0.4); }
+.notice-offline .icon { color: var(--warning); }
+
+/* QA · objetivo táctil mínimo en pestañas cortas del panel (WCAG 2.5.8) */
+.panel-tabs button { min-width: var(--touch-min, 44px); }

@@ -5,6 +5,9 @@ import { COPY } from '@/lib/copy';
 //   idle · thinking · success · error · empty · offline
 // El estado cambia el halo y la animación (siempre con texto, nunca solo color).
 // `speak` muestra un bocadillo con el mensaje del estado (o `message`).
+/**
+ * @param {{ mood?: 'idle'|'thinking'|'success'|'error'|'empty'|'offline', size?: 'xs'|'sm'|'md'|'lg'|'xl', speak?: boolean, message?: string, decorative?: boolean, className?: string }} props
+ */
 export default function Avatar({ mood = 'idle', size = 'md', speak = false, message, decorative = true, className = '' }) {
   const text = message || COPY.avatar.moods[mood] || '';
   return (

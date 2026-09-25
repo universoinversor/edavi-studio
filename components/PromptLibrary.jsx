@@ -2,12 +2,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { TRANSFORM_PROMPTS, VIDEO_CATEGORIES, VIDEO_PROMPTS } from '@/lib/prompt-bank';
 import Icon from './Icon';
+import { COPY } from '@/lib/copy';
+import { useDialog } from '@/lib/useDialog';
+
+const tp = COPY.prompts;
 
 const PAGE = 60;
 const KINDS = [
-  { id: 'image', label: 'Imagen' },
-  { id: 'video', label: 'Video' },
-  { id: 'transform', label: 'Transformar' },
+  { id: 'image', label: COPY.prompts.kinds.image },
+  { id: 'video', label: COPY.prompts.kinds.video },
+  { id: 'transform', label: COPY.prompts.kinds.transform },
 ];
 
 let meigenCache = null;
@@ -15,7 +19,7 @@ function loadMeigen() {
   if (!meigenCache) {
     meigenCache = fetch('/prompts/meigen.json')
       .then((r) => (r.ok ? r.json() : { prompts: [] }))
-      .then((d) => d.prompts.map((p) => ({ ...p, kind: 'image', key: `m${p.id}`, category: p.categories[0] || 'Otros' })))
+      .then((d) => d.prompts.map((p) => ({ ...p, kind: 'image', key: `m${p.id}`, category: p.categories[0] || COPY.prompts.all })))
       .catch(() => { meigenCache = null; return []; });
   }
   return meigenCache;
@@ -36,12 +40,12 @@ function PromptCard({ entry, familyId, onUse, useLabel }) {
     <article className={`pcard ${open ? 'open' : ''}`}>
       <header className="pcard-top">
         <span className="ptag">{entry.category}</span>
-        {entry.shots && <span className="ptag ptag-accent">{entry.shots.length} tomas</span>}
-        {entry.template && <span className="ptag ptag-accent">Plantilla</span>}
-        {recommended && <span className="ptag ptag-ok">Ideal para este modelo</span>}
+        {entry.shots && <span className="ptag ptag-accent">{tp.shots(entry.shots.length)}</span>}
+        {entry.template && <span className="ptag ptag-accent">{tp.template}</span>}
+        {recommended && <span className="ptag ptag-ok">{tp.recommended}</span>}
       </header>
       <h3>{entry.title}</h3>
-      <p className="pcard-text" onClick={() => setOpen((o) => !o)} title={open ? 'Contraer' : 'Ver completo'}>
+      <p className="pcard-text" onClick={() => setOpen((o) => !o)} title={open ? '−' : '+'} aria-expanded={open} role="button" tabIndex={0} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setOpen((o) => !o))}>
         {highlight(entry.shots ? `${entry.prompt} ${entry.shots.map((s, i) => `(${i + 1}) ${s.prompt}`).join(' ')}` : entry.prompt)}
       </p>
       {entry.params && (
@@ -52,7 +56,7 @@ function PromptCard({ entry, familyId, onUse, useLabel }) {
           <span className="pcard-meta">
             {entry.likes ? <span className="likes"><Icon name="star" size={12} filled /> {entry.likes >= 1000 ? `${(entry.likes / 1000).toFixed(1)}k` : entry.likes}</span> : null}
             <span>@{entry.handle || entry.author}</span>
-            {entry.source && <a href={entry.source} target="_blank" rel="noreferrer">Ver ejemplo ↗</a>}
+            {entry.source && <a href={entry.source} target="_blank" rel="noreferrer">{tp.seeExample}</a>}
           </span>
         ) : <span className="pcard-meta"><span>EDAVI</span></span>}
         <button type="button" className="pill-btn pcard-use" onClick={() => onUse(entry)}>{useLabel}</button>
@@ -63,6 +67,9 @@ function PromptCard({ entry, familyId, onUse, useLabel }) {
 
 // Biblioteca de prompts. En modo «sheet» vive dentro del compositor (un solo tipo);
 // en modo «page» es una sección completa con pestañas Imagen / Video / Transformar.
+/**
+ * @param {{ kind?: string, familyId?: string, familyName?: string, onUse: (entry: any, kind: string) => void, onClose?: () => void, page?: boolean }} props
+ */
 export default function PromptLibrary({ kind: fixedKind, familyId, familyName, onUse, onClose, page = false }) {
   const [kind, setKind] = useState(fixedKind || 'image');
   const [meigen, setMeigen] = useState([]);
@@ -72,6 +79,7 @@ export default function PromptLibrary({ kind: fixedKind, familyId, familyName, o
   const [onlyTemplates, setOnlyTemplates] = useState(false);
   const [onlyBest, setOnlyBest] = useState(false);
   const [limit, setLimit] = useState(PAGE);
+  const dialogRef = useDialog(onClose, { enabled: !page });
 
   useEffect(() => {
     if (kind !== 'image' || meigen.length) return;
@@ -84,9 +92,7 @@ export default function PromptLibrary({ kind: fixedKind, familyId, familyName, o
 
   useEffect(() => {
     if (!onClose) return undefined;
-    const onKey = (e) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return undefined;
   }, [onClose]);
 
   const source = kind === 'image' ? meigen : kind === 'video' ? VIDEO : TRANSFORM;
@@ -110,19 +116,19 @@ export default function PromptLibrary({ kind: fixedKind, familyId, familyName, o
   }
 
   const body = (
-    <div className={`plib ${page ? 'plib-page' : ''}`} role={page ? undefined : 'dialog'} aria-label="Biblioteca de prompts" onClick={(e) => e.stopPropagation()}>
+    <div className={`plib ${page ? 'plib-page' : ''}`} ref={page ? undefined : dialogRef} role={page ? undefined : 'dialog'} aria-modal={page ? undefined : 'true'} aria-label={page ? tp.pageTitle : tp.sheetTitle} onClick={(e) => e.stopPropagation()}>
       <header className="plib-head">
         <div>
-          <h2>{page ? 'Biblioteca de prompts' : 'Inspiración'}</h2>
+          <h2>{page ? tp.pageTitle : tp.sheetTitle}</h2>
           <p className="dim">
             {kind === 'image'
-              ? `${meigen.length || '1.446'} prompts de imagen de la comunidad MeiGen`
-              : `${source.length} prompts originales de EDAVI${familyName ? ` · ${familyName}` : ''}`}
+              ? tp.imageSource(meigen.length || '1.446')
+              : tp.ownSource(source.length, familyName)}
           </p>
         </div>
         <div className="plib-actions">
-          <button type="button" className="pill-btn" onClick={surprise} disabled={!filtered.length}><Icon name="dice" size={16} /> Sorpréndeme</button>
-          {onClose && <button type="button" className="icon-btn" onClick={onClose} aria-label="Cerrar">×</button>}
+          <button type="button" className="pill-btn" onClick={surprise} disabled={!filtered.length}><Icon name="dice" size={16} /> {tp.surprise}</button>
+          {onClose && <button type="button" className="icon-btn" onClick={onClose} aria-label={tp.close}><Icon name="x" /></button>}
         </div>
       </header>
 
@@ -135,37 +141,37 @@ export default function PromptLibrary({ kind: fixedKind, familyId, familyName, o
       )}
 
       <div className="plib-filters">
-        <input type="search" placeholder="Buscar: retrato, producto, neón, anime…" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar prompts" />
+        <input type="search" placeholder={tp.search} value={query} onChange={(e) => setQuery(e.target.value)} aria-label={tp.searchLabel} />
         <div className="chips">
-          <button type="button" className={`chip ${category === 'all' ? 'on' : ''}`} onClick={() => setCategory('all')}>Todos</button>
+          <button type="button" className={`chip ${category === 'all' ? 'on' : ''}`} onClick={() => setCategory('all')}>{tp.all}</button>
           {categories.map((c) => (
             <button type="button" key={c} className={`chip ${category === c ? 'on' : ''}`} onClick={() => setCategory(c)}>{c}</button>
           ))}
           {kind === 'image' && (
-            <button type="button" className={`chip ${onlyTemplates ? 'on' : ''}`} onClick={() => setOnlyTemplates((v) => !v)}>Solo plantillas</button>
+            <button type="button" className={`chip ${onlyTemplates ? 'on' : ''}`} onClick={() => setOnlyTemplates((v) => !v)} aria-pressed={onlyTemplates}>{tp.templatesOnly}</button>
           )}
           {kind === 'video' && familyId && (
-            <button type="button" className={`chip ${onlyBest ? 'on' : ''}`} onClick={() => setOnlyBest((v) => !v)}>Ideales para {familyName}</button>
+            <button type="button" className={`chip ${onlyBest ? 'on' : ''}`} onClick={() => setOnlyBest((v) => !v)} aria-pressed={onlyBest}>{tp.bestFor(familyName)}</button>
           )}
         </div>
       </div>
 
       <div className="plib-grid">
-        {loading && <p className="dim">Cargando prompts…</p>}
-        {!loading && filtered.length === 0 && <p className="dim">Nada coincide con tu búsqueda.</p>}
+        {loading && <p className="dim" role="status">{tp.loading}</p>}
+        {!loading && filtered.length === 0 && <p className="dim">{tp.none}</p>}
         {filtered.slice(0, limit).map((entry) => (
-          <PromptCard key={entry.key} entry={entry} familyId={familyId} useLabel={page ? `Usar en ${KINDS.find((k) => k.id === kind).label}` : 'Usar'}
+          <PromptCard key={entry.key} entry={entry} familyId={familyId} useLabel={page ? tp.useIn(KINDS.find((k) => k.id === kind).label) : tp.use}
             onUse={(e) => onUse(e, kind)} />
         ))}
       </div>
       {filtered.length > limit && (
         <div className="plib-more">
-          <button type="button" className="pill-btn" onClick={() => setLimit((l) => l + PAGE)}>Ver más ({filtered.length - limit} restantes)</button>
+          <button type="button" className="pill-btn" onClick={() => setLimit((l) => l + PAGE)}>{tp.more(filtered.length - limit)}</button>
         </div>
       )}
       {kind === 'image' && (
         <p className="plib-credit dim">
-          Prompts de imagen de <a href="https://github.com/jau123/MeiGen-AI-Design-MCP" target="_blank" rel="noreferrer">MeiGen</a> (MIT), creados por sus autores; cada tarjeta enlaza a la publicación original.
+          {tp.credit[0]} <a href="https://github.com/jau123/MeiGen-AI-Design-MCP" target="_blank" rel="noreferrer">MeiGen</a> {tp.credit[1]}
         </p>
       )}
     </div>

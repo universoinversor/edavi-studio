@@ -70,6 +70,11 @@ En modo demo, un prompt que contenga la palabra `fail` simula una generación fa
 | `HF_API_KEY_ID` / `HF_API_KEY_SECRET` | Tu clave de Higgsfield. Solo se usa en el servidor. |
 | `STUDIO_PASSWORD` | Opcional. Si publicas la app con tus claves, exige esta contraseña para generar. **Muy recomendable.** |
 | `HF_MOCK` | `1` activa el modo demo. |
+| `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Opcional. Login, historial en la nube y archivos permanentes (ejecuta `supabase/edavi_install.sql`). |
+| `ADMIN_EMAILS` | Emails que generan con la clave del servidor. |
+| `ALLOW_OWN_KEYS` | `1` deja generar a usuarios con sesión usando su propia clave. |
+| `NEXT_PUBLIC_ALLOW_SIGNUP` | `1` muestra «Crear cuenta» en el login. |
+| `NEXT_PUBLIC_SITE_URL` | URL pública para Open Graph y enlaces de recuperación. |
 
 Si el servidor no tiene claves, cada persona puede poner la suya en **Ajustes** (`KEY_ID:KEY_SECRET`). Esa clave se guarda solo en su navegador.
 
@@ -86,6 +91,7 @@ Cuando Higgsfield publique modelos nuevos o cambie parámetros:
 ```bash
 npm run sync:catalog   # regenera lib/catalog.json desde la documentación oficial
 npm test               # comprueba que todo sigue funcionando
+npm run typecheck      # verificación de tipos (JSDoc + checkJs)
 ```
 
 ## Personalizar la marca
@@ -101,7 +107,11 @@ npm test               # comprueba que todo sigue funcionando
 ## Estructura
 
 ```
-app/api/hf/[...path]   Proxy seguro hacia api.higgsfield.ai (lista blanca de rutas)
+app/api/gen/[...path]  Proxy seguro hacia el proveedor de generación (lista blanca de rutas)
+lib/copy.js            Todos los textos de la interfaz
+lib/brand.js           Marca: nombre, colores, avatar
+lib/providers/         Adaptadores del cliente (generación, almacenamiento)
+lib/server/providers/  Adaptadores del servidor (Higgsfield, demo, Supabase Storage)
 lib/catalog.json       Catálogo generado: endpoint + JSON Schema de cada modelo
 lib/schema.js          Schema → controles, payload y validación
 lib/plan.js            Variaciones, comparación, flujos e inspiración
@@ -109,6 +119,7 @@ lib/jobs.js            Cola de generaciones, polling, flujos y reintentos
 components/            Interfaz: Explorar, estudios, formularios y galería
 scripts/sync-catalog   Sincroniza el catálogo con la documentación de Higgsfield
 tests/                 Pruebas (npm test)
+docs/                  Arquitectura, design system y QA
 ```
 
 ## Crédito y licencia

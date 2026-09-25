@@ -12,7 +12,8 @@
     "start": "next start",
     "test": "node --test tests/",
     "sync:catalog": "node scripts/sync-catalog.mjs",
-    "import:prompts": "node scripts/import-meigen.mjs"
+    "import:prompts": "node scripts/import-meigen.mjs",
+    "typecheck": "tsc -p tsconfig.check.json"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.109.0",
@@ -22,7 +23,11 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3"
+    "@types/node": "^20.19.43",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "cross-env": "^7.0.3",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=20"

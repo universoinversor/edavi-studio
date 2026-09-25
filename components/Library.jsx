@@ -15,6 +15,7 @@ import Icon from './Icon';
 const t = COPY.library;
 const PAGE = 48;
 
+/** @type {Array<[string, (j: any) => boolean]>} */
 const TYPES = [
   ['all', () => true],
   ['image', (j) => j.output === 'image'],

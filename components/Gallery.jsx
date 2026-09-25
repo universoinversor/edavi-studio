@@ -45,7 +45,7 @@ export function Frame({ job, index, now, onReuse, onUseAsInput, onOpen, loggedIn
   const ratio = job.payload?.aspect_ratio && /^\d+:\d+$/.test(job.payload.aspect_ratio) ? job.payload.aspect_ratio.replace(':', ' / ') : job.output === 'video' ? '16 / 9' : '1 / 1';
   const first = job.outputs[0];
   return (
-    <article className={`frame status-${job.status}`} style={{ '--i': index }} aria-label={`${job.family} · ${statusLabel(job.status)}`}>
+    <article className={`frame status-${job.status}`} style={/** @type {any} */ ({ '--i': index })} aria-label={`${job.family} · ${statusLabel(job.status)}`}>
       <div className="frame-edge mono">
         <span>{String(index + 1).padStart(3, '0')}</span>
         <span className="frame-status">{statusLabel(job.status)}</span>

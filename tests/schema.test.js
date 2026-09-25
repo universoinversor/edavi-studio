@@ -5,7 +5,7 @@ import {
   buildPayload, defaultValues, describeFields, validatePayload, extractOutputs, classifyField,
 } from '../lib/schema.js';
 
-const catalog = JSON.parse(readFileSync(new URL('../lib/catalog.json', import.meta.url)));
+const catalog = JSON.parse(readFileSync(new URL('../lib/catalog.json', import.meta.url), 'utf8'));
 const byEndpoint = (e) => catalog.models.find((m) => m.endpoint === e);
 
 test('el catálogo tiene modelos de imagen, video y transformación con schema', () => {

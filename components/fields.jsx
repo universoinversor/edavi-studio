@@ -12,6 +12,7 @@ import Icon from './Icon';
 const ACCEPT = { image: 'image/*', video: 'video/mp4,video/*', audio: 'audio/wav,audio/*' };
 const ACCEPT_LABEL = { image: 'JPG · PNG · WEBP', video: 'MP4', audio: 'WAV' };
 
+/** @param {{ field: any, children?: any, aside?: any }} props */
 function Label({ field, children, aside }) {
   return (
     <div className="field-label">
@@ -45,6 +46,7 @@ export function PromptField({ field, value, onChange, onSubmit, big }) {
   );
 }
 
+/** @param {{ field: any, value: any, onChange: (v: any) => void, placeholder?: string }} props */
 export function StringField({ field, value, onChange, placeholder }) {
   return (
     <label className="field">
@@ -252,6 +254,7 @@ function useUploader(onDone) {
   return [state, run, () => setState(null)];
 }
 
+/** @param {{ accept: string, onFiles: (files: File[], url?: string) => any, multiple?: boolean, children?: any, disabled?: boolean }} props */
 function DropZone({ accept, onFiles, multiple, children, disabled }) {
   const input = useRef(null);
   const [over, setOver] = useState(false);
@@ -288,6 +291,7 @@ function MediaGlyph({ kind }) {
 }
 
 // Tarjeta de subida grande: iconos, título, formatos y etiqueta «Opcional».
+/** @param {{ field: any, many?: boolean, max?: number }} props */
 function UploadCard({ field, many, max }) {
   const [one, plural] = NOUN[field.accept];
   return (

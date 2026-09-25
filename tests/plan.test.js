@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { animateTargets, carryValues, chainedPayload, compareCandidates, variationPayloads } from '../lib/plan.js';
 import { buildPayload as buildPayloadFor, validatePayload } from '../lib/schema.js';
 
-const { models } = JSON.parse(readFileSync(new URL('../lib/catalog.json', import.meta.url)));
+const { models } = JSON.parse(readFileSync(new URL('../lib/catalog.json', import.meta.url), 'utf8'));
 const get = (id) => models.find((m) => m.id === id);
 
 test('variaciones: semillas distintas cuando el modelo tiene semilla y no se fijó', () => {

@@ -22,6 +22,8 @@ import AuthModal from './AuthModal';
 import AccountMenu from './AccountMenu';
 import Onboarding from './Onboarding';
 import Toasts from './Toasts';
+import ErrorBoundary from './ErrorBoundary';
+import { useOnline } from '@/lib/mascot';
 import Logo from './Logo';
 import Icon from './Icon';
 import Portal from './Portal';
@@ -77,6 +79,7 @@ export default function Studio() {
   const [onboarding, setOnboarding] = useState(false);
   const { session } = useAuth();
   const theme = useTheme();
+  const online = useOnline();
   const jobs = useJobs();
   const running = jobs.filter((j) => j.studio && !TERMINAL.has(j.status) && j.status !== 'error');
 
@@ -251,6 +254,11 @@ export default function Studio() {
           </button>
         )}
 
+        {!online && (
+          <p className="notice notice-offline" role="status"><Icon name="wifiOff" size={18} /> {t.notices.offline}</p>
+        )}
+
+        <ErrorBoundary resetKey={studio}>
         {studio === 'explore' ? (
           <Explore onOpen={open} />
         ) : studio === 'library' ? (
@@ -273,6 +281,7 @@ export default function Studio() {
             )}
           </>
         )}
+        </ErrorBoundary>
       </main>
 
       <nav className="studio-nav mobile-nav" aria-label={t.mobileNavLabel}>

@@ -212,10 +212,10 @@ export default function Composer({ studio, seed, onModelChange }) {
 
     const group = total > 1 ? newGroup() : null;
     variationPayloads(model, payload, variations).forEach((p, i) => {
-      enqueue({ model, payload: p, estimate: estimates.main, then, group, label: variations > 1 ? `Variación ${i + 1}/${variations}` : null });
+      enqueue({ model, payload: p, estimate: estimates.main, then, group, label: variations > 1 ? t.variationLabel(i + 1, variations) : null });
     });
     for (const c of chosen) {
-      const id = enqueue({ model: c.model, payload: c.payload, estimate: estimates.compare[c.model.id], group, label: 'Comparación' });
+      const id = enqueue({ model: c.model, payload: c.payload, estimate: estimates.compare[c.model.id], group, label: t.compareLabel });
       if (!estimates.compare[c.model.id]) generation.estimate(c.model.endpoint, c.payload).then((e) => setEstimate(id, e)).catch(() => {});
     }
     setRestored(false);
