@@ -18,6 +18,7 @@ Creado por **EDAVI**. Código abierto, en español, listo para conectar tu clave
 | **Video** | De texto, imagen o referencias a video, con audio nativo |
 | **Transformar** | Editar, extender o transferir movimiento a un video |
 | **Personajes** | Entrenar un Soul ID con tus fotos y usarlo en SOUL |
+| **Prompts** | Biblioteca de más de 1.500 prompts listos para usar en cualquier estudio |
 
 ### Lo que añade EDAVI encima de la API
 
@@ -25,7 +26,11 @@ Creado por **EDAVI**. Código abierto, en español, listo para conectar tu clave
 - **🎲 Variaciones ×1–×4:** varias versiones de un mismo prompt; cada una recibe una semilla distinta automáticamente.
 - **⚖️ Comparar modelos:** el mismo prompt en hasta 4 modelos a la vez; solo aparecen los compatibles con lo que ya rellenaste.
 - **🔗 Flujos automáticos:** «animar al terminar». Generas una imagen y, cuando está lista, se envía sola a un modelo de video.
-- **✦ Inspiración:** prompts de ejemplo en español para cada estudio.
+- **📚 Biblioteca de prompts (más de 1.500):**
+  - **1.446 prompts de imagen** de la comunidad [MeiGen](https://github.com/jau123/MeiGen-AI-Design-MCP), con categorías, plantillas con [HUECOS] resaltados, autor y enlace al ejemplo original.
+  - **58 prompts de video** originales de EDAVI, por categorías (cine, producto, moda, naturaleza, acción, VFX, comida, redes, arquitectura, animación). Incluyen storyboards de varias tomas para Kling y presets de cámara para Cinema Studio.
+  - **22 prompts de transformación**: cambios de estilo, ropa, escenario, clima y movimiento.
+  - Consejos específicos para cada modelo y «Sorpréndeme» para elegir uno al azar.
 - **⭐ Historial inteligente:** favoritos, búsqueda, créditos gastados hoy, «Reusar», «Animar →» y «Transformar →».
 - **🧠 Formularios automáticos:** cada modelo dibuja sus controles a partir de su JSON Schema oficial y se valida en español antes de gastar créditos.
 - **🔁 Cola resistente:** sigue cada trabajo con backoff, se reanuda si recargas y, si llegas al límite de concurrencia, reenvía cuando hay hueco.
@@ -86,7 +91,8 @@ npm test               # comprueba que todo sigue funcionando
 - Color morado y estilo: variables `--accent` al inicio de `app/globals.css`
 - Icono: `public/icon.svg`
 - Banners y modelos destacados: `components/Explore.jsx` y `FEATURED` en `lib/catalog.js`
-- Prompts de inspiración: `INSPIRATION` en `lib/plan.js`
+- Prompts de video y transformación, y consejos por modelo: `lib/prompt-bank.js`
+- Banco de prompts de imagen: `npm run import:prompts` (actualiza `public/prompts/meigen.json` desde MeiGen)
 
 ## Estructura
 
@@ -113,5 +119,7 @@ Además, te pedimos que:
 - enlaces a este repositorio: https://github.com/universoinversor/edavi-studio
 
 Consulta [NOTICE](NOTICE) para el texto de atribución sugerido.
+
+Los prompts de imagen provienen de [MeiGen AI Design MCP](https://github.com/jau123/MeiGen-AI-Design-MCP) (MIT, © 2026 MeiGen) y fueron creados por sus respectivos autores, enlazados en cada tarjeta.
 
 Basado en [Open Generative AI](https://github.com/Anil-matcha/Open-Generative-AI) (MIT, © Open Generative AI Contributors). EDAVI Studio es un proyecto independiente: no está afiliado a Higgsfield. «Higgsfield» y los nombres de los modelos pertenecen a sus respectivos dueños.

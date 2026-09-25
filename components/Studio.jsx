@@ -10,6 +10,8 @@ import Gallery from './Gallery';
 import CharactersStudio from './CharactersStudio';
 import SettingsModal from './SettingsModal';
 import Explore from './Explore';
+import PromptLibrary from './PromptLibrary';
+import { applyPromptEntry } from '@/lib/plan';
 import LoginModal from './LoginModal';
 import { authEnabled, signOut, useAuth } from '@/lib/auth';
 
@@ -150,7 +152,7 @@ export default function Studio() {
           ) : (
             <button type="button" className="pill-btn" onClick={() => setLogin({ open: true, reason: null })}>Entrar</button>
           ))}
-          <button type="button" className="cta small" onClick={() => openFromExplore(studio === 'explore' || studio === 'characters' ? 'image' : studio)}>Crear</button>
+          <button type="button" className="cta small" onClick={() => openFromExplore(['explore', 'characters', 'prompts'].includes(studio) ? 'image' : studio)}>Crear</button>
         </div>
       </header>
 
@@ -168,6 +170,11 @@ export default function Studio() {
 
         {studio === 'explore' ? (
           <Explore onOpen={openFromExplore} />
+        ) : studio === 'prompts' ? (
+          <PromptLibrary page onUse={(entry, kind) => {
+            const model = getModel(seeds[kind].modelId);
+            plant(kind, model.id, applyPromptEntry(model, {}, entry));
+          }} />
         ) : (
           <>
             <h1 className="sr-only">{current.label}</h1>

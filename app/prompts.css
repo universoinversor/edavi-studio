@@ -1,0 +1,89 @@
+/* ---------- Biblioteca de prompts ---------- */
+
+.plib {
+  width: min(1100px, 100%);
+  max-height: min(88vh, 900px);
+  overflow-y: auto;
+  padding: 22px;
+  border-radius: 30px;
+  background: linear-gradient(180deg, rgba(34, 28, 50, 0.86), rgba(20, 16, 30, 0.82));
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: var(--glass-edge), 0 40px 120px -30px #000;
+  animation: rise 0.25s ease both;
+  scrollbar-width: thin;
+}
+.plib-page {
+  width: 100%;
+  max-height: none;
+  overflow: visible;
+  padding: 22px 22px 30px;
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+}
+.plib-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.plib-head h2 { margin: 0; font: 400 clamp(32px, 3.4vw, 52px)/1 var(--font-display); text-transform: uppercase; }
+.plib-head p { margin: 6px 0 0; }
+.plib-actions { display: flex; gap: 8px; align-items: center; flex: none; }
+.plib-kinds { margin: 16px 0 0; padding: 0; }
+.plib-filters { display: grid; gap: 12px; margin: 16px 0 18px; position: sticky; top: -22px; z-index: 2; padding: 10px 0; background: linear-gradient(180deg, rgba(28, 23, 42, 0.96) 70%, transparent); }
+.plib-page .plib-filters { top: 78px; background: linear-gradient(180deg, rgba(11, 9, 17, 0.92) 70%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-radius: 16px; }
+.plib-filters .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.plib-filters .chips::-webkit-scrollbar { display: none; }
+
+.plib-grid { columns: 3 300px; column-gap: 14px; }
+.plib-grid > p { column-span: all; }
+.pcard {
+  break-inside: avoid;
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.pcard:hover { background: rgba(255, 255, 255, 0.07); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 0 0 1px rgba(185, 140, 255, 0.35); }
+.pcard-top { display: flex; flex-wrap: wrap; gap: 5px; }
+.ptag { padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: #cfc9da; font-size: 11px; font-weight: 600; }
+.ptag-accent { background: rgba(143, 77, 255, 0.24); color: var(--accent-hi); }
+.ptag-ok { background: rgba(126, 226, 168, 0.14); color: var(--ok); }
+.pcard h3 { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.3; }
+.pcard-text {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  cursor: pointer;
+}
+.pcard.open .pcard-text { -webkit-line-clamp: unset; max-height: 420px; overflow-y: auto; }
+.pcard-text mark { background: rgba(143, 77, 255, 0.28); color: #fff; border-radius: 4px; padding: 0 2px; }
+.pcard-params { margin: 0; color: var(--accent-hi); font-size: 10.5px; }
+.pcard-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 2px; }
+.pcard-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--faint); font-size: 11.5px; min-width: 0; }
+.pcard-meta a { color: var(--accent-hi); }
+.pcard-use { flex: none; background: rgba(143, 77, 255, 0.28); color: #fff; font-weight: 600; }
+.pcard-use:hover { background: var(--accent); }
+.plib-more { display: flex; justify-content: center; margin-top: 6px; }
+.plib-credit { margin: 18px 0 0; font-size: 12px; text-align: center; }
+
+/* Consejos por modelo bajo el prompt */
+.tips { padding: 10px 14px; border-radius: 14px; background: rgba(143, 77, 255, 0.08); box-shadow: inset 0 0 0 1px rgba(185, 140, 255, 0.15); font-size: 12.5px; color: #d9d4e4; }
+.tips summary { cursor: pointer; list-style: none; line-height: 1.45; }
+.tips summary::-webkit-details-marker { display: none; }
+.tips ul { margin: 8px 0 0; padding-left: 22px; color: var(--muted); display: grid; gap: 4px; }
+
+.stage-prompts { max-width: 1480px; }
+
+@media (max-width: 760px) {
+  .plib { padding: 16px; border-radius: 22px; }
+  .plib-head { flex-direction: column; }
+  .plib-grid { columns: 1; }
+  .plib-page .plib-filters { top: 110px; }
+}

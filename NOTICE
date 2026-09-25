@@ -13,3 +13,7 @@ incluye este texto de atribución en un lugar visible (pie de la app o README):
 
 Partes derivadas de Open Generative AI (MIT, © Open Generative AI Contributors):
 https://github.com/Anil-matcha/Open-Generative-AI
+
+Los prompts de imagen de public/prompts/meigen.json provienen de MeiGen AI Design MCP
+(MIT, © 2026 MeiGen): https://github.com/jau123/MeiGen-AI-Design-MCP
+Cada prompt conserva el nombre de su autor y el enlace a la publicación original.

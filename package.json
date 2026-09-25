@@ -11,7 +11,8 @@
     "build": "next build",
     "start": "next start",
     "test": "node --test tests/",
-    "sync:catalog": "node scripts/sync-catalog.mjs"
+    "sync:catalog": "node scripts/sync-catalog.mjs",
+    "import:prompts": "node scripts/import-meigen.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.109.0",

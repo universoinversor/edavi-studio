@@ -3,6 +3,7 @@ import { BRAND } from '@/lib/brand';
 import './globals.css';
 import './glass.css';
 import './tool.css';
+import './prompts.css';
 
 const display = Anton({ subsets: ['latin'], weight: '400', variable: '--font-display' });
 const body = Geist({ subsets: ['latin'], variable: '--font-body' });

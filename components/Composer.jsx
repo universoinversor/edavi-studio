@@ -2,7 +2,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { familiesForStudio, getModel, models as allModels, soulVersion, workflowLabel } from '@/lib/catalog';
 import { buildPayload, describeFields, validatePayload } from '@/lib/schema';
-import { animateTargets, carryValues, chainedPayload, compareCandidates, INSPIRATION, variationPayloads } from '@/lib/plan';
+import { animateTargets, applyPromptEntry, carryValues, chainedPayload, compareCandidates, variationPayloads } from '@/lib/plan';
+import { GENERAL_TIPS, MODEL_TIPS } from '@/lib/prompt-bank';
+import PromptLibrary from './PromptLibrary';
 import { enqueue, setEstimate } from '@/lib/jobs';
 import { estimateCost } from '@/lib/client';
 import {
@@ -62,6 +64,7 @@ export default function Composer({ studio, seed, onModelChange }) {
   const [busy, setBusy] = useState({});
   const [errors, setErrors] = useState([]);
   const [sheet, setSheet] = useState(false);
+  const [library, setLibrary] = useState(false);
   const [flash, setFlash] = useState(false);
   const [variations, setVariations] = useState(1);
   const [compareWith, setCompareWith] = useState([]);
@@ -133,11 +136,13 @@ export default function Composer({ studio, seed, onModelChange }) {
     onModelChange?.(id);
   }
 
-  function inspire() {
-    const list = INSPIRATION[studio] || [];
-    const options = list.filter((p) => p !== values.prompt);
-    if (options.length) setField('prompt', options[Math.floor(Math.random() * options.length)]);
+  // Aplica un prompt de la biblioteca (con sus parámetros y tomas si el modelo los admite).
+  function usePrompt(entry) {
+    setValues((prev) => applyPromptEntry(model, prev, entry));
+    setErrors([]);
+    setLibrary(false);
   }
+  const tips = MODEL_TIPS[model.familyId] || GENERAL_TIPS[studio] || [];
 
   function generate() {
     if (uploading) return;
@@ -223,9 +228,15 @@ export default function Composer({ studio, seed, onModelChange }) {
 
         {fields.prompt && (
           <div className="prompt-wrap">
-            {INSPIRATION[studio] && <button type="button" className="inspire" onClick={inspire}>✦ Inspiración</button>}
+            <button type="button" className="inspire" onClick={() => setLibrary(true)}>✦ Biblioteca</button>
             {render(fields.prompt)}
           </div>
+        )}
+        {fields.prompt && tips.length > 0 && (
+          <details className="tips">
+            <summary><span aria-hidden>💡</span> {tips[0]}</summary>
+            {tips.length > 1 && <ul>{tips.slice(1).map((t) => <li key={t}>{t}</li>)}</ul>}
+          </details>
         )}
 
         <button type="button" className="row-card model-row" onClick={() => setSheet(true)}>
@@ -316,6 +327,11 @@ export default function Composer({ studio, seed, onModelChange }) {
         </button>
       </footer>
 
+      {library && (
+        <Portal>
+          <PromptLibrary kind={studio} familyId={model.familyId} familyName={model.family} onUse={usePrompt} onClose={() => setLibrary(false)} />
+        </Portal>
+      )}
       {sheet && <Portal><FamilySheet studio={studio} currentFamily={model.familyId} onPick={switchModel} onClose={() => setSheet(false)} /></Portal>}
     </section>
   );
