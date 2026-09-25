@@ -264,7 +264,7 @@ code { font-family: var(--font-mono); font-size: 0.9em; color: var(--accent-hi);
 .field-label > span:first-child { font-weight: 600; color: var(--text-2); font-size: 12.5px; }
 .req { color: var(--accent-hi); margin-left: 3px; }
 
-input[type='text'], input[type='url'], input[type='search'], input[type='number'], input[type='password'], select, textarea {
+input[type='text'], input[type='url'], input[type='search'], input[type='number'], input[type='password'], input[type='email'], select, textarea {
   width: 100%; padding: 10px 12px;
   background: var(--surface-2); border: 1px solid transparent; border-radius: 10px;
   transition: border-color 0.15s, background 0.15s;

@@ -165,9 +165,5 @@
   .tiles-featured { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 380px) {
-  .topbar .brand-name { display: none; }
-}
-
 .empty-avatar { width: 120px; height: auto; filter: drop-shadow(0 16px 24px rgba(var(--shade-rgb), 0.4)); animation: float 6s ease-in-out infinite; }
 .login-avatar { justify-self: center; width: 96px; height: auto; margin-bottom: -6px; filter: drop-shadow(0 12px 20px rgba(var(--shade-rgb), 0.4)); }

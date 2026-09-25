@@ -4,6 +4,7 @@ import { enumLabel } from '@/lib/schema';
 import { listPresets, listSoulStyles, uploadFile } from '@/lib/client';
 import { friendlyError } from '@/lib/errors';
 import { useCharacters } from '@/lib/characters';
+import Icon from './Icon';
 
 const ACCEPT = { image: 'image/*', video: 'video/mp4,video/*', audio: 'audio/wav,audio/*' };
 const ACCEPT_LABEL = { image: 'JPG · PNG · WEBP', video: 'MP4', audio: 'WAV' };
@@ -151,7 +152,7 @@ export function SeedField({ field, value, onChange }) {
         <input type="number" value={value ?? ''} min={min} max={max} placeholder="Aleatoria"
           onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
         <button type="button" className="icon-btn" title="Semilla al azar"
-          onClick={() => onChange(min + Math.floor(Math.random() * Math.min(max - min, 999999)))}>⚄</button>
+          onClick={() => onChange(min + Math.floor(Math.random() * Math.min(max - min, 999999)))}><Icon name="dice" /></button>
       </div>
     </label>
   );

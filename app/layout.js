@@ -7,6 +7,7 @@ import './tool.css';
 import './prompts.css';
 import './hero.css';
 import './theme.css';
+import './polish.css';
 
 const display = Anton({ subsets: ['latin'], weight: '400', variable: '--font-display' });
 const body = Geist({ subsets: ['latin'], variable: '--font-body' });

@@ -1,0 +1,152 @@
+/* =====================================================================
+   PULIDO UX — accesibilidad, toque y detalles de calidad (guía UI/UX Pro Max).
+   No cambia el estilo: solo tamaños, contraste, foco y respuesta al tocar.
+   ===================================================================== */
+
+html { -webkit-tap-highlight-color: transparent; }
+body { touch-action: manipulation; }
+
+/* Contraste AA para textos secundarios (≥ 4.5:1 sobre el fondo) */
+:root { --faint: #8a8398; }
+[data-theme='light'] { --faint: #6f6a61; }
+
+/* Saltar al contenido (teclado / lector de pantalla) */
+.skip-link {
+  position: fixed;
+  left: 12px;
+  top: -60px;
+  z-index: 200;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  transition: top 0.2s ease;
+}
+.skip-link:focus { top: 12px; text-decoration: none; }
+main:focus { outline: none; }
+
+/* Iconos SVG alineados con el texto */
+.icon { flex: none; vertical-align: -0.18em; }
+.cta, .pill-btn, .ghost-btn, .frame-actions button, .inspire, .view-tabs button, .ftag, .float-chip, .likes, .generate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.tips summary { display: flex; gap: 8px; align-items: flex-start; }
+.tips summary .icon { margin-top: 1px; color: var(--accent-hi); }
+.adv-title .icon, .inspire .icon { color: var(--accent-hi); }
+.fav { display: grid; place-items: center; padding: 10px; margin: -10px -10px -10px auto; }
+.fav .icon { width: 16px; height: 16px; }
+.fav.on { color: var(--accent-hi); }
+.likes { gap: 4px; }
+.settings-btn .icon { display: none; }
+
+/* Números estables (no bailan al cambiar) */
+.hero-stats dt, .cost, .stepper .mono, .frame-edge, .spent, .dot { font-variant-numeric: tabular-nums; }
+
+/* Tamaños mínimos de texto */
+.mono { font-size: 11.5px; }
+.badge { font-size: 11px; }
+.row-label, .cost { font-size: 12px; }
+
+/* Respuesta al pulsar: escala sutil, sin mover el diseño */
+.cta, .generate, .pill-btn, .chip, .tile, .studio-tab, .frame-actions button, .pcard-use, .banner, .more-row, .stepper button, .icon-btn {
+  transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.18s, box-shadow 0.18s, color 0.18s;
+}
+.cta:active:not(:disabled), .generate:active:not(:disabled), .pill-btn:active:not(:disabled), .chip:active:not(:disabled),
+.studio-tab:active, .frame-actions button:active, .pcard-use:active, .more-row:active, .stepper button:active:not(:disabled), .icon-btn:active {
+  transform: scale(0.96);
+}
+.tile:active, .banner:active { transform: scale(0.985); }
+.dropzone { cursor: pointer; }
+
+/* Altura real en móviles (la barra del navegador no tapa el panel) */
+@supports (height: 100dvh) {
+  .panel { height: calc(100dvh - 104px); }
+  .stage-main { min-height: calc(100dvh - 104px); }
+  .hero { min-height: min(620px, calc(100dvh - 110px)); }
+}
+
+/* ---------- Hoja «Más» (móvil) ---------- */
+
+.more-backdrop { place-items: end center; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); }
+.more-sheet {
+  width: 100%;
+  max-width: 520px;
+  display: grid;
+  gap: 4px;
+  padding: 8px 8px 12px;
+  border-radius: 28px;
+  animation: sheet-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.grabber { justify-self: center; width: 40px; height: 4px; margin: 4px 0 8px; border-radius: 2px; background: rgba(var(--ink-rgb), 0.22); }
+.more-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 60px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 18px;
+  background: none;
+  text-align: left;
+}
+.more-row:hover, .more-row.on { background: rgba(var(--ink-rgb), 0.06); }
+.more-row .nav-icon, .more-row .icon { display: block; width: 22px; height: 22px; color: var(--accent-hi); }
+.more-row span { display: grid; gap: 2px; }
+.more-row b { font-size: 15px; }
+.more-row em { font-style: normal; color: var(--muted); font-size: 12.5px; }
+@keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ---------- Inicio de sesión: mostrar/ocultar contraseña ---------- */
+
+.password-wrap { position: relative; }
+.password-wrap input { padding-right: 48px; }
+.password-eye {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--muted);
+}
+.password-eye:hover { color: var(--text); }
+
+/* ---------- Pantallas táctiles: objetivos de 44 px ---------- */
+
+@media (pointer: coarse) {
+  .chip, .pill-btn, .ghost-btn, .filters button, .seg button, .view-tabs button, .frame-actions button, .inspire, .pcard-use, .swatch-add { min-height: 44px; }
+  .icon-btn, .theme-toggle, .settings-btn, .stepper button, .user-pill, .media-remove { min-width: 44px; min-height: 44px; }
+  .topbar .cta.small { min-height: 44px; }
+  .brand { min-height: 44px; padding-right: 6px; }
+  .notes a, .pcard-meta a { display: inline-block; padding: 12px 0; margin: -12px 0; }
+  .panel-tabs button { padding: 12px 0 14px; }
+  .chips, .frame-actions { gap: 8px; }
+  .link-btn { padding: 10px 0; }
+  input[type='text'], input[type='url'], input[type='search'], input[type='number'], input[type='password'], input[type='email'], select, textarea { font-size: 16px; min-height: 44px; }
+  .panel .field-prompt textarea { font-size: 16px; }
+}
+
+@media (max-width: 760px) {
+  .mobile-nav { grid-template-columns: repeat(5, 1fr); }
+  .studio-tab .tab-label { font-size: 11.5px; }
+  .studio-tab { min-height: 54px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .more-sheet { animation: none; }
+  .cta:active, .generate:active, .pill-btn:active, .chip:active, .tile:active, .banner:active { transform: none; }
+}
+
+/* Móvil: tema y ajustes viven en «Más»; la barra superior queda limpia */
+@media (max-width: 760px) {
+  .topbar .theme-toggle, .topbar .settings-btn { display: none; }
+}

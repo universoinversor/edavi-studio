@@ -12,6 +12,7 @@ import {
   RangeField, ReferenceField, SeedField, ShotsField, StringField, StyleField, TagsField, ToggleField,
 } from './fields';
 import Portal from './Portal';
+import Icon from './Icon';
 
 const ANIMATE_DEFAULT = 'seedance-2-5/image-to-video';
 const newGroup = () => `g${Date.now().toString(36)}`;
@@ -228,13 +229,13 @@ export default function Composer({ studio, seed, onModelChange }) {
 
         {fields.prompt && (
           <div className="prompt-wrap">
-            <button type="button" className="inspire" onClick={() => setLibrary(true)}>✦ Biblioteca</button>
+            <button type="button" className="inspire" onClick={() => setLibrary(true)}><Icon name="sparkles" size={14} /> Biblioteca</button>
             {render(fields.prompt)}
           </div>
         )}
         {fields.prompt && tips.length > 0 && (
           <details className="tips">
-            <summary><span aria-hidden>💡</span> {tips[0]}</summary>
+            <summary><Icon name="bulb" size={15} /> {tips[0]}</summary>
             {tips.length > 1 && <ul>{tips.slice(1).map((t) => <li key={t}>{t}</li>)}</ul>}
           </details>
         )}
@@ -260,7 +261,7 @@ export default function Composer({ studio, seed, onModelChange }) {
 
         <details className="row-card advanced" open={compareWith.length > 0 || animate.on || undefined}>
           <summary>
-            <span className="adv-title"><span aria-hidden>⚙</span> Configuración avanzada</span>
+            <span className="adv-title"><Icon name="sliders" size={16} /> Configuración avanzada</span>
             <span className="row-chevron" aria-hidden>›</span>
           </summary>
           <div className="advanced-body">

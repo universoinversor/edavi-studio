@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { TRANSFORM_PROMPTS, VIDEO_CATEGORIES, VIDEO_PROMPTS } from '@/lib/prompt-bank';
+import Icon from './Icon';
 
 const PAGE = 60;
 const KINDS = [
@@ -49,7 +50,7 @@ function PromptCard({ entry, familyId, onUse, useLabel }) {
       <footer className="pcard-foot">
         {entry.author ? (
           <span className="pcard-meta">
-            {entry.likes ? <span>♥ {entry.likes >= 1000 ? `${(entry.likes / 1000).toFixed(1)}k` : entry.likes}</span> : null}
+            {entry.likes ? <span className="likes"><Icon name="star" size={12} filled /> {entry.likes >= 1000 ? `${(entry.likes / 1000).toFixed(1)}k` : entry.likes}</span> : null}
             <span>@{entry.handle || entry.author}</span>
             {entry.source && <a href={entry.source} target="_blank" rel="noreferrer">Ver ejemplo ↗</a>}
           </span>
@@ -120,7 +121,7 @@ export default function PromptLibrary({ kind: fixedKind, familyId, familyName, o
           </p>
         </div>
         <div className="plib-actions">
-          <button type="button" className="pill-btn" onClick={surprise} disabled={!filtered.length}>🎲 Sorpréndeme</button>
+          <button type="button" className="pill-btn" onClick={surprise} disabled={!filtered.length}><Icon name="dice" size={16} /> Sorpréndeme</button>
           {onClose && <button type="button" className="icon-btn" onClick={onClose} aria-label="Cerrar">×</button>}
         </div>
       </header>

@@ -15,6 +15,8 @@ import { applyPromptEntry } from '@/lib/plan';
 import LoginModal from './LoginModal';
 import { authEnabled, signOut, useAuth } from '@/lib/auth';
 import { setTheme, useTheme } from '@/lib/theme';
+import Icon from './Icon';
+import Portal from './Portal';
 
 const PREFS_KEY = 'edavi.prefs';
 const SOUL_BY_VERSION = { v2: 'soul-2/generate', v1: 'soul-standard/generate', cinema: 'soul-cinema/generate' };
@@ -58,6 +60,7 @@ export default function Studio() {
   const [settings, setSettings] = useState({ open: false, reason: null });
   const [hasOwnKey, setHasOwnKey] = useState(false);
   const [login, setLogin] = useState({ open: false, reason: null });
+  const [more, setMore] = useState(false);
   const { session } = useAuth();
   const theme = useTheme();
   const jobs = useJobs();
@@ -65,7 +68,15 @@ export default function Studio() {
 
   useEffect(() => {
     const prefs = readPrefs();
-    if (prefs.studio && STUDIOS.some((x) => x.id === prefs.studio)) setStudio(prefs.studio);
+    const fromHash = window.location.hash.slice(1);
+    if (STUDIOS.some((x) => x.id === fromHash)) setStudio(fromHash);
+    else if (prefs.studio && STUDIOS.some((x) => x.id === prefs.studio)) setStudio(prefs.studio);
+    // Botón «Atrás» del navegador / teléfono entre secciones.
+    const onPop = () => {
+      const id = window.location.hash.slice(1) || 'explore';
+      if (STUDIOS.some((x) => x.id === id)) setStudio(id);
+    };
+    window.addEventListener('popstate', onPop);
     if (prefs.models) {
       setSeeds((s) => {
         const next = { ...s };
@@ -88,6 +99,7 @@ export default function Studio() {
     return () => {
       window.removeEventListener('edavi:settings', syncKey);
       window.removeEventListener('edavi:auth-required', onAuth);
+      window.removeEventListener('popstate', onPop);
     };
   }, []);
 
@@ -97,7 +109,10 @@ export default function Studio() {
 
   const goStudio = useCallback((id) => {
     setStudio(id);
+    setMore(false);
     writePrefs({ ...readPrefs(), studio: id });
+    // Cada sección tiene su propia URL: se puede compartir y «Atrás» funciona.
+    if (window.location.hash !== `#${id}`) window.history.pushState(null, '', `#${id}`);
   }, []);
 
   const rememberModel = useCallback((studioId, modelId) => {
@@ -134,18 +149,29 @@ export default function Studio() {
     .filter((j) => j.status === 'completed' && j.estimate && new Date(j.createdAt).toDateString() === today)
     .reduce((sum, j) => sum + Number(j.estimate.credits || 0), 0);
 
-  const tabs = (className) => (
-    <nav className={className} aria-label="Estudios">
-      {STUDIOS.map((s) => {
-        const count = running.filter((j) => j.studio === s.id).length;
-        return (
-          <button type="button" key={s.id} className={`studio-tab ${studio === s.id ? 'on' : ''}`} onClick={() => goStudio(s.id)} aria-current={studio === s.id ? 'page' : undefined}>
-            <NavIcon id={s.id} />
-            <span className="tab-label">{s.label}</span>
-            {count > 0 && <i className="dot" title={`${count} en proceso`}>{count}</i>}
-          </button>
-        );
-      })}
+  const tabButton = (s) => {
+    const count = running.filter((j) => j.studio === s.id).length;
+    return (
+      <button type="button" key={s.id} className={`studio-tab ${studio === s.id ? 'on' : ''}`} onClick={() => goStudio(s.id)} aria-current={studio === s.id ? 'page' : undefined}>
+        <NavIcon id={s.id} />
+        <span className="tab-label">{s.label}</span>
+        {count > 0 && <i className="dot" title={`${count} en proceso`}>{count}</i>}
+      </button>
+    );
+  };
+  const tabs = (className) => <nav className={className} aria-label="Estudios">{STUDIOS.map(tabButton)}</nav>;
+
+  // Móvil: máximo 5 destinos; el resto va en «Más».
+  const MOBILE_MAIN = ['explore', 'image', 'video', 'prompts'];
+  const inMore = !MOBILE_MAIN.includes(studio);
+  const mobileNav = (
+    <nav className="studio-nav mobile-nav" aria-label="Navegación principal">
+      {STUDIOS.filter((s) => MOBILE_MAIN.includes(s.id)).map(tabButton)}
+      <button type="button" className={`studio-tab ${inMore ? 'on' : ''}`} onClick={() => setMore(true)} aria-haspopup="dialog" aria-expanded={more}>
+        <Icon name="more" size={20} />
+        <span className="tab-label">Más</span>
+        {running.some((j) => j.studio === 'transform') && <i className="dot">{running.filter((j) => j.studio === 'transform').length}</i>}
+      </button>
     </nav>
   );
 
@@ -155,6 +181,7 @@ export default function Studio() {
 
   return (
     <div className="app">
+      <a className="skip-link" href="#contenido">Saltar al contenido</a>
       <header className="topbar">
         <button type="button" className="brand" onClick={() => goStudio('explore')} aria-label={`${BRAND.name}: inicio`}>
           <span className="brand-mark" aria-hidden />
@@ -166,9 +193,9 @@ export default function Studio() {
           {spentToday > 0 && <span className="spent" title="Estimación de créditos usados hoy en este navegador">≈ {spentToday.toFixed(1)} cr hoy</span>}
           <button type="button" className="pill-btn theme-toggle" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
             aria-label={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'} title={theme === 'light' ? 'Modo oscuro' : 'Modo claro'}>
-            {theme === 'light' ? '☾' : '☀'}
+            <Icon name={theme === 'light' ? 'moon' : 'sun'} />
           </button>
-          <button type="button" className="pill-btn settings-btn" onClick={() => setSettings({ open: true, reason: null })} aria-label="Ajustes"><span aria-hidden>⚙</span><span className="tab-label"> Ajustes</span></button>
+          <button type="button" className="pill-btn settings-btn" onClick={() => setSettings({ open: true, reason: null })} aria-label="Ajustes"><Icon name="settings" className="settings-icon" /><span className="tab-label">Ajustes</span></button>
           {authEnabled && (session ? (
             <button type="button" className="user-pill" onClick={() => window.confirm(`¿Cerrar la sesión de ${session.user.email}?`) && signOut()} title={`${session.user.email} · cerrar sesión`}>
               {(session.user.email || '?')[0].toUpperCase()}
@@ -180,7 +207,7 @@ export default function Studio() {
         </div>
       </header>
 
-      <main className={`stage stage-${studio}`}>
+      <main id="contenido" tabIndex={-1} className={`stage stage-${studio}`}>
         {needsLogin && (
           <button type="button" className="notice notice-action" onClick={() => setLogin({ open: true, reason: null })}>
             <b>Inicia sesión para crear.</b> Tu historial y tus archivos se guardan en tu nube y los ves desde cualquier dispositivo. →
@@ -214,7 +241,27 @@ export default function Studio() {
         )}
       </main>
 
-      {tabs('studio-nav mobile-nav')}
+      {mobileNav}
+      {more && (
+        <Portal>
+          <div className="sheet-backdrop more-backdrop" onClick={() => setMore(false)}>
+            <div className="sheet more-sheet" role="dialog" aria-label="Más opciones" onClick={(e) => e.stopPropagation()}>
+              <span className="grabber" aria-hidden />
+              {STUDIOS.filter((s) => !MOBILE_MAIN.includes(s.id)).map((s) => (
+                <button type="button" key={s.id} className={`more-row ${studio === s.id ? 'on' : ''}`} onClick={() => goStudio(s.id)}>
+                  <NavIcon id={s.id} /><span><b>{s.label}</b><em>{s.blurb}</em></span>
+                </button>
+              ))}
+              <button type="button" className="more-row" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+                <Icon name={theme === 'light' ? 'moon' : 'sun'} size={20} /><span><b>{theme === 'light' ? 'Modo oscuro' : 'Modo claro'}</b><em>Cambia entre morado y blanco con dorado.</em></span>
+              </button>
+              <button type="button" className="more-row" onClick={() => { setMore(false); setSettings({ open: true, reason: null }); }}>
+                <Icon name="settings" size={20} /><span><b>Ajustes</b><em>Tu clave de Higgsfield y el estado del servidor.</em></span>
+              </button>
+            </div>
+          </div>
+        </Portal>
+      )}
 
       <footer className="site-footer">
         <span>Creado por <a href={BRAND.repo} target="_blank" rel="noreferrer"><b>{BRAND.author}</b></a></span>

@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { familiesForStudio, FEATURED } from '@/lib/catalog';
 import { useJobs, withArchive } from '@/lib/jobs';
+import Icon from './Icon';
 
 const KIND = { image: 'Imagen', video: 'Video', transform: 'Transformar' };
 
@@ -93,7 +94,7 @@ export default function Explore({ onOpen }) {
             Con biblioteca de prompts, comparación de modelos, flujos automáticos y tu propio avatar.
           </p>
           <div className="hero-ctas">
-            <button type="button" className="cta" onClick={() => onOpen('image')}>✦ Empezar a crear</button>
+            <button type="button" className="cta" onClick={() => onOpen('image')}><Icon name="sparkles" /> Empezar a crear</button>
             <button type="button" className="pill-btn hero-ghost" onClick={() => onOpen('prompts')}>Ver {PROMPT_COUNT} prompts ›</button>
           </div>
           <dl className="hero-stats">
@@ -109,9 +110,9 @@ export default function Explore({ onOpen }) {
           <span className="orbit orbit-3" />
           <span className="hero-halo" />
           <img className="hero-avatar" src="/edavi-avatar.png" alt="" width="320" height="320" />
-          <span className="float-chip chip-a">🎬 Seedance 2.5</span>
-          <span className="float-chip chip-b">📸 SOUL V2</span>
-          <span className="float-chip chip-c">🎥 Kling 3.0</span>
+          <span className="float-chip chip-a"><Icon name="film" size={15} /> Seedance 2.5</span>
+          <span className="float-chip chip-b"><Icon name="camera" size={15} /> SOUL V2</span>
+          <span className="float-chip chip-c"><Icon name="video" size={15} /> Kling 3.0</span>
         </div>
       </section>
 

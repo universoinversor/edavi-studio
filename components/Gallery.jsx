@@ -6,6 +6,7 @@ import { statusLabel, friendlyError } from '@/lib/errors';
 import { TERMINAL } from '@/lib/schema';
 import { workflowLabel } from '@/lib/catalog';
 import Portal from './Portal';
+import Icon from './Icon';
 
 const WEEK = 7 * 24 * 3600 * 1000;
 
@@ -75,7 +76,7 @@ function Frame({ job, index, now, onReuse, onUseAsInput, onOpen, loggedIn }) {
         <span className="frame-status">{statusLabel(job.status)}</span>
         {!done && <span>{elapsed(now - job.createdAt)}</span>}
         <button type="button" className={`fav ${job.favorite ? 'on' : ''}`} onClick={() => toggleFavorite(job.localId)}
-          aria-pressed={job.favorite} aria-label={job.favorite ? 'Quitar de favoritos' : 'Marcar como favorito'}>{job.favorite ? '★' : '☆'}</button>
+          aria-pressed={job.favorite} aria-label={job.favorite ? 'Quitar de favoritos' : 'Marcar como favorito'}><Icon name="star" filled={job.favorite} /></button>
       </div>
 
       <div className={`frame-media ${job.outputs.length > 1 ? 'multi' : ''}`} style={{ aspectRatio: job.outputs.length > 1 ? undefined : ratio }}>
@@ -99,7 +100,7 @@ function Frame({ job, index, now, onReuse, onUseAsInput, onOpen, loggedIn }) {
           <div className="frame-tags">
             {job.label && <span className="ftag">{job.label}</span>}
             {job.then && <span className="ftag ftag-flow">{job.chainedTo ? 'Animación lanzada' : 'Se animará al terminar'}</span>}
-            {job.saved && <span className="ftag ftag-saved">☁ En tu nube</span>}
+            {job.saved && <span className="ftag ftag-saved"><Icon name="cloud" size={13} /> En tu nube</span>}
             {job.estimate && <span className="ftag ftag-cost">≈ {Number(job.estimate.credits).toFixed(2)} cr</span>}
           </div>
         )}
@@ -112,7 +113,7 @@ function Frame({ job, index, now, onReuse, onUseAsInput, onOpen, loggedIn }) {
           )}
           {ok && job.outputs.map((o, i) => (
             <button type="button" key={o.url} onClick={() => download(o.url, `edavi-${job.requestId?.slice(0, 8) || job.localId}-${i + 1}.${extFor(o, o.url)}`)}>
-              ↓{job.outputs.length > 1 ? ` ${i + 1}` : ''}
+              <Icon name="download" size={15} label="Descargar" />{job.outputs.length > 1 ? ` ${i + 1}` : ''}
             </button>
           ))}
           {ok && job.outputs[0]?.type !== 'audio' && (
@@ -121,7 +122,7 @@ function Frame({ job, index, now, onReuse, onUseAsInput, onOpen, loggedIn }) {
             </button>
           )}
           {ok && loggedIn && !job.saved && (
-            <button type="button" onClick={save} disabled={saving} title="Los archivos de Higgsfield caducan a los 7 días">{saving ? 'Guardando…' : '☁ Guardar'}</button>
+            <button type="button" onClick={save} disabled={saving} title="Los archivos de Higgsfield caducan a los 7 días">{saving ? 'Guardando…' : <><Icon name="cloud" size={15} /> Guardar</>}</button>
           )}
           <button type="button" onClick={() => onReuse(job)}>Reusar</button>
           {done && <button type="button" className="dim" onClick={() => removeJob(job.localId)} aria-label="Eliminar del historial">×</button>}
@@ -184,10 +185,10 @@ export default function Gallery({ studio, onReuse, onUseAsInput }) {
       <header className="gallery-head">
         <nav className="view-tabs" role="tablist">
           <button type="button" role="tab" aria-selected={tab === 'history'} className={tab === 'history' ? 'on' : ''} onClick={() => setView('history')}>
-            <span aria-hidden>▤</span> Historial{running ? <i className="dot">{running}</i> : null}
+            <Icon name="history" size={16} /> Historial{running ? <i className="dot">{running}</i> : null}
           </button>
           <button type="button" role="tab" aria-selected={tab === 'how'} className={tab === 'how' ? 'on' : ''} onClick={() => setView('how')}>
-            <span aria-hidden>◈</span> Cómo funciona
+            <Icon name="book" size={16} /> Cómo funciona
           </button>
         </nav>
         {tab === 'history' && (
@@ -196,7 +197,7 @@ export default function Gallery({ studio, onReuse, onUseAsInput }) {
             <div className="seg" aria-label="Filtros">
               <button type="button" className={scope === 'studio' ? 'on' : ''} onClick={() => setScope('studio')}>Este estudio</button>
               <button type="button" className={scope === 'all' ? 'on' : ''} onClick={() => setScope('all')}>Todo</button>
-              <button type="button" className={scope === 'fav' ? 'on' : ''} onClick={() => setScope('fav')}>★</button>
+              <button type="button" className={scope === 'fav' ? 'on' : ''} onClick={() => setScope('fav')} aria-label="Favoritos"><Icon name="star" size={15} filled={scope === 'fav'} /></button>
             </div>
             {jobs.some((j) => TERMINAL.has(j.status) || j.status === 'error') && (
               <button type="button" className="pill-btn" onClick={() => window.confirm('¿Quitar del historial los resultados terminados? Los favoritos se conservan.') && clearFinished()}>Limpiar</button>

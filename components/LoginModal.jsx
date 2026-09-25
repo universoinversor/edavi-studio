@@ -2,11 +2,13 @@
 import { useEffect, useState } from 'react';
 import { signIn } from '@/lib/auth';
 import { BRAND } from '@/lib/brand';
+import Icon from './Icon';
 
 export default function LoginModal({ reason, onClose }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -40,13 +42,18 @@ export default function LoginModal({ reason, onClose }) {
         <p className="dim login-lead">{reason || `Inicia sesión para generar y guardar tu historial en la nube de ${BRAND.name}.`}</p>
         <label className="field">
           <div className="field-label"><span>Email</span></div>
-          <input type="text" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </label>
         <label className="field">
           <div className="field-label"><span>Contraseña</span></div>
-          <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <div className="password-wrap">
+            <input type={showPass ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <button type="button" className="password-eye" onClick={() => setShowPass((v) => !v)} aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
+              <Icon name={showPass ? 'eyeOff' : 'eye'} />
+            </button>
+          </div>
         </label>
-        {error && <p className="field-error">{error}</p>}
+        {error && <p className="field-error" role="alert">{error}</p>}
         <footer className="sheet-foot">
           <button type="submit" className="cta" disabled={busy || !email || !password}>{busy ? 'Entrando…' : 'Entrar'}</button>
         </footer>
