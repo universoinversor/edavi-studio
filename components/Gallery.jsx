@@ -5,88 +5,63 @@ import { useAuth } from '@/lib/auth';
 import { statusLabel, friendlyError } from '@/lib/errors';
 import { TERMINAL } from '@/lib/schema';
 import { workflowLabel } from '@/lib/catalog';
+import { COPY } from '@/lib/copy';
+import { toast } from '@/lib/toast';
+import { Lightbox, Media, download, fileName } from './media';
+import Avatar from './Avatar';
 import Portal from './Portal';
 import Icon from './Icon';
 
+const t = COPY.gallery;
 const WEEK = 7 * 24 * 3600 * 1000;
-
-async function download(url, name) {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error();
-    const blob = await res.blob();
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  } catch {
-    // El CDN no permite descargar desde el navegador: se abre en otra pestaña.
-    window.open(url, '_blank', 'noopener');
-  }
-}
-
-function extFor(output, url) {
-  const m = url.split('?')[0].match(/\.(\w{3,4})$/);
-  if (m) return m[1];
-  return output.type === 'video' ? 'mp4' : output.type === 'audio' ? 'wav' : 'png';
-}
-
-function Media({ output, onOpen }) {
-  if (output.type === 'video') {
-    return <video src={output.url} muted loop playsInline preload="metadata"
-      onMouseEnter={(e) => e.currentTarget.play().catch(() => {})}
-      onMouseLeave={(e) => e.currentTarget.pause()} onClick={onOpen} />;
-  }
-  if (output.type === 'audio') return <audio src={output.url} controls />;
-  return <img src={output.url} alt="" loading="lazy" onClick={onOpen} />;
-}
+const HOW_ART = ['how-a', 'how-b', 'how-c'];
 
 function elapsed(ms) {
   const s = Math.max(0, Math.round(ms / 1000));
   return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s`;
 }
 
-function useNow(active) {
+export function useNow(active) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!active) return undefined;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
   }, [active]);
   return now;
 }
 
-function Frame({ job, index, now, onReuse, onUseAsInput, onOpen, loggedIn }) {
+export function Frame({ job, index, now, onReuse, onUseAsInput, onOpen, loggedIn }) {
   const done = TERMINAL.has(job.status) || job.status === 'error';
   const ok = job.status === 'completed';
-  const [cancelError, setCancelError] = useState(null);
+  const [problem, setProblem] = useState(null);
   const [saving, setSaving] = useState(false);
   const expired = ok && !job.saved && now - job.createdAt > WEEK;
   async function save() {
     setSaving(true);
-    setCancelError(null);
-    try { await archiveJob(job.localId); } catch (e) { setCancelError(friendlyError(e)); } finally { setSaving(false); }
+    setProblem(null);
+    try { await archiveJob(job.localId); toast(COPY.toasts.saved, { tone: 'success' }); } catch (e) { setProblem(friendlyError(e)); } finally { setSaving(false); }
   }
   const ratio = job.payload?.aspect_ratio && /^\d+:\d+$/.test(job.payload.aspect_ratio) ? job.payload.aspect_ratio.replace(':', ' / ') : job.output === 'video' ? '16 / 9' : '1 / 1';
+  const first = job.outputs[0];
   return (
-    <article className={`frame status-${job.status}`} style={{ '--i': index }}>
+    <article className={`frame status-${job.status}`} style={{ '--i': index }} aria-label={`${job.family} · ${statusLabel(job.status)}`}>
       <div className="frame-edge mono">
         <span>{String(index + 1).padStart(3, '0')}</span>
         <span className="frame-status">{statusLabel(job.status)}</span>
         {!done && <span>{elapsed(now - job.createdAt)}</span>}
         <button type="button" className={`fav ${job.favorite ? 'on' : ''}`} onClick={() => toggleFavorite(job.localId)}
-          aria-pressed={job.favorite} aria-label={job.favorite ? 'Quitar de favoritos' : 'Marcar como favorito'}><Icon name="star" filled={job.favorite} /></button>
+          aria-pressed={job.favorite} aria-label={job.favorite ? t.favRemove : t.favAdd}><Icon name="star" filled={job.favorite} /></button>
       </div>
 
       <div className={`frame-media ${job.outputs.length > 1 ? 'multi' : ''}`} style={{ aspectRatio: job.outputs.length > 1 ? undefined : ratio }}>
-        {ok && job.outputs.map((o, i) => <Media key={o.url + i} output={o} onOpen={() => onOpen(job, i)} />)}
-        {!done && <div className="developing"><i /><span className="mono">{job.status === 'local_queue' ? 'esperando turno' : 'generando'}</span></div>}
+        {ok && job.outputs.map((o, i) => <Media key={o.url + i} output={o} alt={job.payload?.prompt || job.family} onOpen={() => onOpen(job, i)} />)}
+        {!done && <div className="developing" role="status"><i /><span className="mono">{job.status === 'local_queue' ? t.waiting : t.generating}</span></div>}
         {done && !ok && (
           <div className="frame-failed">
             <b>{statusLabel(job.status)}</b>
-            <p>{job.error || 'Sin detalles.'}</p>
-            {job.status === 'failed' || job.status === 'nsfw' ? <p className="dim mono">No se cobran créditos.</p> : null}
+            <p>{job.error || t.noDetails}</p>
+            {job.status === 'failed' || job.status === 'nsfw' ? <p className="dim mono">{t.noCharge}</p> : null}
           </div>
         )}
       </div>
@@ -99,62 +74,54 @@ function Frame({ job, index, now, onReuse, onUseAsInput, onOpen, loggedIn }) {
         {(job.label || job.estimate || job.then || job.saved) && (
           <div className="frame-tags">
             {job.label && <span className="ftag">{job.label}</span>}
-            {job.then && <span className="ftag ftag-flow">{job.chainedTo ? 'Animación lanzada' : 'Se animará al terminar'}</span>}
-            {job.saved && <span className="ftag ftag-saved"><Icon name="cloud" size={13} /> En tu nube</span>}
-            {job.estimate && <span className="ftag ftag-cost">≈ {Number(job.estimate.credits).toFixed(2)} cr</span>}
+            {job.then && <span className="ftag ftag-flow">{job.chainedTo ? t.flowLaunched : t.flowPending}</span>}
+            {job.saved && <span className="ftag ftag-saved"><Icon name="cloud" size={13} /> {t.inCloud}</span>}
+            {job.estimate && <span className="ftag ftag-cost">{t.credits(Number(job.estimate.credits).toFixed(2))}</span>}
           </div>
         )}
         {job.payload?.prompt && <p className="frame-prompt" title={job.payload.prompt}>{job.payload.prompt}</p>}
-        {expired && <p className="hint">Higgsfield conserva los archivos al menos 7 días; puede que ya no estén.</p>}
-        {cancelError && <p className="field-error">{cancelError}</p>}
+        {expired && <p className="hint">{t.expired}</p>}
+        {problem && <p className="field-error" role="alert">{problem}</p>}
         <div className="frame-actions">
           {!done && job.status !== 'in_progress' && job.status !== 'submitting' && (
-            <button type="button" onClick={() => cancelJob(job.localId).catch((e) => setCancelError(e.status === 400 ? 'Ya empezó a procesarse; no se puede cancelar.' : friendlyError(e)))}>Cancelar</button>
+            <button type="button" onClick={() => cancelJob(job.localId).catch((e) => setProblem(e.status === 400 ? t.cannotCancel : friendlyError(e)))}>{t.cancel}</button>
           )}
           {ok && job.outputs.map((o, i) => (
-            <button type="button" key={o.url} onClick={() => download(o.url, `edavi-${job.requestId?.slice(0, 8) || job.localId}-${i + 1}.${extFor(o, o.url)}`)}>
-              <Icon name="download" size={15} label="Descargar" />{job.outputs.length > 1 ? ` ${i + 1}` : ''}
+            <button type="button" key={o.url} onClick={() => download(o.url, fileName(job, o, i))} aria-label={`${t.download}${job.outputs.length > 1 ? ` ${i + 1}` : ''}`}>
+              <Icon name="download" size={15} />{job.outputs.length > 1 ? ` ${i + 1}` : ''}
             </button>
           ))}
-          {ok && job.outputs[0]?.type !== 'audio' && (
-            <button type="button" onClick={() => onUseAsInput(job.outputs[0])} title={job.outputs[0]?.type === 'image' ? 'Animar esta imagen' : 'Transformar este video'}>
-              {job.outputs[0]?.type === 'image' ? 'Animar →' : 'Transformar →'}
+          {ok && first?.type !== 'audio' && (
+            <button type="button" onClick={() => onUseAsInput(first)} title={first?.type === 'image' ? t.animateHint : t.transformHint}>
+              {first?.type === 'image' ? t.animate : t.transform}
             </button>
           )}
           {ok && loggedIn && !job.saved && (
-            <button type="button" onClick={save} disabled={saving} title="Los archivos de Higgsfield caducan a los 7 días">{saving ? 'Guardando…' : <><Icon name="cloud" size={15} /> Guardar</>}</button>
+            <button type="button" onClick={save} disabled={saving} title={t.saveHint}>{saving ? t.saving : <><Icon name="cloud" size={15} /> {t.save}</>}</button>
           )}
-          <button type="button" onClick={() => onReuse(job)}>Reusar</button>
-          {done && <button type="button" className="dim" onClick={() => removeJob(job.localId)} aria-label="Eliminar del historial">×</button>}
+          <button type="button" onClick={() => onReuse(job)}>{t.reuse}</button>
+          {done && <button type="button" className="dim" onClick={() => removeJob(job.localId)} aria-label={t.remove}><Icon name="x" size={15} /></button>}
         </div>
       </div>
     </article>
   );
 }
 
-function Lightbox({ job, index, onClose }) {
-  const [i, setI] = useState(index);
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowRight') setI((x) => Math.min(x + 1, job.outputs.length - 1));
-      if (e.key === 'ArrowLeft') setI((x) => Math.max(x - 1, 0));
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [job, onClose]);
-  const o = job.outputs[i];
+function HowItWorks({ studio }) {
+  const how = t.howSteps[studio] || t.howSteps.image;
   return (
-    <div className="lightbox" onClick={onClose} role="dialog" aria-label="Vista ampliada">
-      <div className="lightbox-inner" onClick={(e) => e.stopPropagation()}>
-        {o.type === 'video' ? <video src={o.url} controls autoPlay loop playsInline /> : <img src={o.url} alt="" />}
-        <div className="lightbox-bar mono">
-          <span>{job.family} · {workflowLabel(job.workflow)}</span>
-          {job.outputs.length > 1 && <span>{i + 1}/{job.outputs.length}</span>}
-          <a href={o.url} target="_blank" rel="noreferrer">abrir original ↗</a>
-          <button type="button" onClick={onClose}>cerrar ×</button>
-        </div>
-        {job.payload?.prompt && <p className="lightbox-prompt">{job.payload.prompt}</p>}
+    <div className="how">
+      <h2>{how.title}</h2>
+      <p className="how-sub">{how.sub}</p>
+      <div className="how-steps">
+        {how.steps.map(([title, text], i) => (
+          <article key={title} className="how-card">
+            <span className="how-n mono">{String(i + 1).padStart(2, '0')}</span>
+            <h3>{title}</h3>
+            <p>{text}</p>
+            <div className={`how-art ${HOW_ART[i]}`} aria-hidden />
+          </article>
+        ))}
       </div>
     </div>
   );
@@ -167,40 +134,38 @@ export default function Gallery({ studio, onReuse, onUseAsInput }) {
   const [scope, setScope] = useState('studio');
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(null);
+  const [view, setView] = useState(null);
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     return jobs.filter((j) => (scope === 'all' || (scope === 'fav' ? j.favorite : j.studio === studio))
       && (!q || `${j.payload?.prompt || ''} ${j.family}`.toLowerCase().includes(q)));
   }, [jobs, scope, studio, query]);
-  const active = jobs.some((j) => !TERMINAL.has(j.status) && j.status !== 'error');
-  const now = useNow(active);
   const running = jobs.filter((j) => !TERMINAL.has(j.status) && j.status !== 'error').length;
-
-  const [view, setView] = useState(null);
+  const now = useNow(running > 0);
   // Sin historial se muestra «Cómo funciona»; con historial, los resultados.
   const tab = view || (jobs.some((j) => j.studio === studio) ? 'history' : 'how');
 
   return (
-    <section className="gallery stage-main" aria-label="Resultados">
+    <section className="gallery stage-main" aria-label={t.label}>
       <header className="gallery-head">
         <nav className="view-tabs" role="tablist">
           <button type="button" role="tab" aria-selected={tab === 'history'} className={tab === 'history' ? 'on' : ''} onClick={() => setView('history')}>
-            <Icon name="history" size={16} /> Historial{running ? <i className="dot">{running}</i> : null}
+            <Icon name="history" size={16} /> {t.history}{running ? <i className="dot">{running}</i> : null}
           </button>
           <button type="button" role="tab" aria-selected={tab === 'how'} className={tab === 'how' ? 'on' : ''} onClick={() => setView('how')}>
-            <Icon name="book" size={16} /> Cómo funciona
+            <Icon name="book" size={16} /> {t.how}
           </button>
         </nav>
         {tab === 'history' && (
           <div className="gallery-tools">
-            {jobs.length > 3 && <input type="search" className="gallery-search" placeholder="Buscar…" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar en el historial" />}
-            <div className="seg" aria-label="Filtros">
-              <button type="button" className={scope === 'studio' ? 'on' : ''} onClick={() => setScope('studio')}>Este estudio</button>
-              <button type="button" className={scope === 'all' ? 'on' : ''} onClick={() => setScope('all')}>Todo</button>
-              <button type="button" className={scope === 'fav' ? 'on' : ''} onClick={() => setScope('fav')} aria-label="Favoritos"><Icon name="star" size={15} filled={scope === 'fav'} /></button>
+            {jobs.length > 3 && <input type="search" className="gallery-search" placeholder={t.search} value={query} onChange={(e) => setQuery(e.target.value)} aria-label={t.searchLabel} />}
+            <div className="seg" role="group" aria-label={t.filters}>
+              <button type="button" aria-pressed={scope === 'studio'} className={scope === 'studio' ? 'on' : ''} onClick={() => setScope('studio')}>{t.thisStudio}</button>
+              <button type="button" aria-pressed={scope === 'all'} className={scope === 'all' ? 'on' : ''} onClick={() => setScope('all')}>{t.all}</button>
+              <button type="button" aria-pressed={scope === 'fav'} className={scope === 'fav' ? 'on' : ''} onClick={() => setScope('fav')} aria-label={t.favorites}><Icon name="star" size={15} filled={scope === 'fav'} /></button>
             </div>
             {jobs.some((j) => TERMINAL.has(j.status) || j.status === 'error') && (
-              <button type="button" className="pill-btn" onClick={() => window.confirm('¿Quitar del historial los resultados terminados? Los favoritos se conservan.') && clearFinished()}>Limpiar</button>
+              <button type="button" className="pill-btn" onClick={() => window.confirm(t.clearConfirm) && clearFinished()}>{t.clear}</button>
             )}
           </div>
         )}
@@ -210,9 +175,9 @@ export default function Gallery({ studio, onReuse, onUseAsInput }) {
         <HowItWorks studio={studio} />
       ) : shown.length === 0 ? (
         <div className="empty">
-          <img className="empty-avatar" src="/edavi-avatar.png" alt="" width="120" height="120" />
-          <p className="empty-title">Aún no hay nada aquí</p>
-          <p className="dim">{query ? 'Nada coincide con tu búsqueda.' : 'Escribe un prompt y pulsa Generar. Tus resultados aparecerán aquí.'}</p>
+          <Avatar mood="empty" size="md" />
+          <p className="empty-title">{t.emptyTitle}</p>
+          <p className="dim">{query ? t.emptySearch : t.emptyText}</p>
         </div>
       ) : (
         <div className="contact-sheet">
@@ -224,55 +189,5 @@ export default function Gallery({ studio, onReuse, onUseAsInput }) {
       )}
       {open && <Portal><Lightbox job={open.job} index={open.index} onClose={() => setOpen(null)} /></Portal>}
     </section>
-  );
-}
-
-const HOW = {
-  image: {
-    title: 'Convierte ideas en imágenes',
-    sub: 'Retratos, producto y carteles con los mejores modelos de imagen.',
-    steps: [
-      ['Elige un modelo', 'SOUL para retratos y moda, Recraft para gráficos, Marketing Studio para producto.', 'how-a'],
-      ['Describe o sube referencias', 'Escribe tu idea o sube imágenes para editarlas y combinarlas.', 'how-b'],
-      ['Genera y compara', 'Hasta 4 variaciones y el mismo prompt en varios modelos a la vez.', 'how-c'],
-    ],
-  },
-  video: {
-    title: 'Convierte texto en video',
-    sub: 'Clips cinematográficos con audio nativo, listos para tus proyectos.',
-    steps: [
-      ['Escribe o anima', 'Parte de un prompt, de una imagen o de varias referencias.', 'how-b'],
-      ['Dirige la toma', 'Formato, duración, resolución, cámara y audio, según el modelo.', 'how-c'],
-      ['Genera y guarda', 'Mira el costo antes de generar y guarda los mejores en tu nube.', 'how-a'],
-    ],
-  },
-  transform: {
-    title: 'Transforma cualquier video',
-    sub: 'Edita, extiende o copia el movimiento de un video a tu imagen.',
-    steps: [
-      ['Sube tu video', 'MP4 de al menos 4 segundos para transferir movimiento.', 'how-c'],
-      ['Añade el cambio', 'Una imagen de personaje, un objeto nuevo o un prompt de edición.', 'how-a'],
-      ['Genera', 'El movimiento original se conserva con el nuevo aspecto.', 'how-b'],
-    ],
-  },
-};
-
-function HowItWorks({ studio }) {
-  const how = HOW[studio] || HOW.image;
-  return (
-    <div className="how">
-      <h2>{how.title}</h2>
-      <p className="how-sub">{how.sub}</p>
-      <div className="how-steps">
-        {how.steps.map(([title, text, art], i) => (
-          <article key={title} className="how-card">
-            <span className="how-n mono">{String(i + 1).padStart(2, '0')}</span>
-            <h3>{title}</h3>
-            <p>{text}</p>
-            <div className={`how-art ${art}`} aria-hidden />
-          </article>
-        ))}
-      </div>
-    </div>
   );
 }

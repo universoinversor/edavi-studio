@@ -17,6 +17,7 @@ import CharactersStudio from './CharactersStudio';
 import SettingsModal from './SettingsModal';
 import Explore from './Explore';
 import PromptLibrary from './PromptLibrary';
+import Library from './Library';
 import AuthModal from './AuthModal';
 import AccountMenu from './AccountMenu';
 import Onboarding from './Onboarding';
@@ -252,6 +253,8 @@ export default function Studio() {
 
         {studio === 'explore' ? (
           <Explore onOpen={open} />
+        ) : studio === 'library' ? (
+          <Library onReuse={onReuse} onCreate={() => open('image')} />
         ) : studio === 'prompts' ? (
           <PromptLibrary page onUse={(entry, kind) => {
             const model = getModel(seeds[kind].modelId);
