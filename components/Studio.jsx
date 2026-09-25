@@ -5,21 +5,31 @@ import { getHealth, loadSettings } from '@/lib/api';
 import { useJobs } from '@/lib/jobs';
 import { TERMINAL } from '@/lib/schema';
 import { BRAND } from '@/lib/brand';
+import { COPY } from '@/lib/copy';
+import { applyPromptEntry } from '@/lib/plan';
+import { authEnabled, useAuth } from '@/lib/auth';
+import { setTheme, useTheme } from '@/lib/theme';
+import { needsOnboarding, resetOnboarding } from '@/lib/onboarding';
 import Composer from './Composer';
 import Gallery from './Gallery';
 import CharactersStudio from './CharactersStudio';
 import SettingsModal from './SettingsModal';
 import Explore from './Explore';
 import PromptLibrary from './PromptLibrary';
-import { applyPromptEntry } from '@/lib/plan';
-import LoginModal from './LoginModal';
-import { authEnabled, signOut, useAuth } from '@/lib/auth';
-import { setTheme, useTheme } from '@/lib/theme';
+import AuthModal from './AuthModal';
+import AccountMenu from './AccountMenu';
+import Onboarding from './Onboarding';
+import Toasts from './Toasts';
+import Logo from './Logo';
 import Icon from './Icon';
 import Portal from './Portal';
 
+const t = COPY.app;
 const PREFS_KEY = 'edavi.prefs';
 const SOUL_BY_VERSION = { v2: 'soul-2/generate', v1: 'soul-standard/generate', cinema: 'soul-cinema/generate' };
+const ROUTES = STUDIOS.map((s) => s.id);
+// Móvil: máximo 5 destinos; el resto va en «Más».
+const MOBILE_MAIN = ['explore', 'image', 'video', 'prompts'];
 
 function readPrefs() {
   try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch { return {}; }
@@ -47,6 +57,7 @@ const NAV_ICONS = {
   transform: <><path d="M4 8h12l-3-3M20 16H8l3 3" /></>,
   characters: <><circle cx="12" cy="8.5" r="3.5" /><path d="M5 20a7 7 0 0 1 14 0" /></>,
   prompts: <><path d="M5 4h11l3 3v13H5z" /><path d="M9 10h6M9 14h6M9 18h3" /></>,
+  library: <><rect x="3.5" y="3.5" width="7" height="7" rx="2" /><rect x="13.5" y="3.5" width="7" height="7" rx="2" /><rect x="3.5" y="13.5" width="7" height="7" rx="2" /><rect x="13.5" y="13.5" width="7" height="7" rx="2" /></>,
 };
 
 function NavIcon({ id }) {
@@ -59,8 +70,9 @@ export default function Studio() {
   const [health, setHealth] = useState(null);
   const [settings, setSettings] = useState({ open: false, reason: null });
   const [hasOwnKey, setHasOwnKey] = useState(false);
-  const [login, setLogin] = useState({ open: false, reason: null });
+  const [auth, setAuth] = useState(null); // { mode, reason } o null
   const [more, setMore] = useState(false);
+  const [onboarding, setOnboarding] = useState(false);
   const { session } = useAuth();
   const theme = useTheme();
   const jobs = useJobs();
@@ -69,14 +81,13 @@ export default function Studio() {
   useEffect(() => {
     const prefs = readPrefs();
     const fromHash = window.location.hash.slice(1);
-    if (STUDIOS.some((x) => x.id === fromHash)) setStudio(fromHash);
-    else if (prefs.studio && STUDIOS.some((x) => x.id === prefs.studio)) setStudio(prefs.studio);
+    if (ROUTES.includes(fromHash)) setStudio(fromHash);
+    else if (prefs.studio && ROUTES.includes(prefs.studio)) setStudio(prefs.studio);
     // Botón «Atrás» del navegador / teléfono entre secciones.
     const onPop = () => {
       const id = window.location.hash.slice(1) || 'explore';
-      if (STUDIOS.some((x) => x.id === id)) setStudio(id);
+      if (ROUTES.includes(id)) setStudio(id);
     };
-    window.addEventListener('popstate', onPop);
     if (prefs.models) {
       setSeeds((s) => {
         const next = { ...s };
@@ -85,21 +96,23 @@ export default function Studio() {
       });
     }
     getHealth().then(setHealth).catch(() => setHealth({ mock: false, serverCredentials: false }));
+    if (needsOnboarding()) setOnboarding(true);
     const syncKey = () => setHasOwnKey(Boolean(loadSettings().credentials));
     syncKey();
-    const onAuth = (e) => {
-      if (e.detail?.code === 'login') { setLogin({ open: true, reason: 'Inicia sesión para generar.' }); return; }
-      setSettings({
-        open: true,
-        reason: e.detail?.code === 'password' ? 'Introduce la contraseña del estudio para poder generar.' : 'Revisa tu clave de Higgsfield.',
-      });
+    const onAuthRequired = (e) => {
+      if (e.detail?.code === 'login') { setAuth({ mode: 'signin', reason: COPY.auth.required }); return; }
+      setSettings({ open: true, reason: e.detail?.code === 'password' ? COPY.errors.password : COPY.errors.badCredentials });
     };
+    const onRecovery = () => setAuth({ mode: 'recovery' });
+    window.addEventListener('popstate', onPop);
     window.addEventListener('edavi:settings', syncKey);
-    window.addEventListener('edavi:auth-required', onAuth);
+    window.addEventListener('edavi:auth-required', onAuthRequired);
+    window.addEventListener('edavi:password-recovery', onRecovery);
     return () => {
-      window.removeEventListener('edavi:settings', syncKey);
-      window.removeEventListener('edavi:auth-required', onAuth);
       window.removeEventListener('popstate', onPop);
+      window.removeEventListener('edavi:settings', syncKey);
+      window.removeEventListener('edavi:auth-required', onAuthRequired);
+      window.removeEventListener('edavi:password-recovery', onRecovery);
     };
   }, []);
 
@@ -108,11 +121,14 @@ export default function Studio() {
   }, [running.length]);
 
   const goStudio = useCallback((id) => {
+    if (!ROUTES.includes(id)) return;
     setStudio(id);
     setMore(false);
     writePrefs({ ...readPrefs(), studio: id });
     // Cada sección tiene su propia URL: se puede compartir y «Atrás» funciona.
     if (window.location.hash !== `#${id}`) window.history.pushState(null, '', `#${id}`);
+    // Tras cambiar de sección, el foco va al contenido (lectores de pantalla).
+    requestAnimationFrame(() => document.getElementById('contenido')?.focus({ preventScroll: true }));
   }, []);
 
   const rememberModel = useCallback((studioId, modelId) => {
@@ -139,10 +155,16 @@ export default function Studio() {
     }
   }, [plant, seeds]);
 
-  const openFromExplore = useCallback((studioId, modelId, values) => {
-    if (studioId === 'characters' || studioId === 'prompts') return goStudio(studioId);
+  // Abre una sección; si es un estudio de creación, con modelo y valores opcionales.
+  const open = useCallback((studioId, modelId, values) => {
+    if (!seeds[studioId]) return goStudio(studioId);
     plant(studioId, modelId || seeds[studioId].modelId, values || {});
   }, [goStudio, plant, seeds]);
+
+  const finishOnboarding = useCallback((destination) => {
+    setOnboarding(false);
+    if (destination) open(destination);
+  }, [open]);
 
   const today = new Date().toDateString();
   const spentToday = jobs
@@ -155,72 +177,61 @@ export default function Studio() {
       <button type="button" key={s.id} className={`studio-tab ${studio === s.id ? 'on' : ''}`} onClick={() => goStudio(s.id)} aria-current={studio === s.id ? 'page' : undefined}>
         <NavIcon id={s.id} />
         <span className="tab-label">{s.label}</span>
-        {count > 0 && <i className="dot" title={`${count} en proceso`}>{count}</i>}
+        {count > 0 && <i className="dot" title={t.running(count)}>{count}</i>}
       </button>
     );
   };
-  const tabs = (className) => <nav className={className} aria-label="Estudios">{STUDIOS.map(tabButton)}</nav>;
 
-  // Móvil: máximo 5 destinos; el resto va en «Más».
-  const MOBILE_MAIN = ['explore', 'image', 'video', 'prompts'];
   const inMore = !MOBILE_MAIN.includes(studio);
-  const mobileNav = (
-    <nav className="studio-nav mobile-nav" aria-label="Navegación principal">
-      {STUDIOS.filter((s) => MOBILE_MAIN.includes(s.id)).map(tabButton)}
-      <button type="button" className={`studio-tab ${inMore ? 'on' : ''}`} onClick={() => setMore(true)} aria-haspopup="dialog" aria-expanded={more}>
-        <Icon name="more" size={20} />
-        <span className="tab-label">Más</span>
-        {running.some((j) => j.studio === 'transform') && <i className="dot">{running.filter((j) => j.studio === 'transform').length}</i>}
-      </button>
-    </nav>
-  );
-
+  const moreRunning = running.filter((j) => !MOBILE_MAIN.includes(j.studio)).length;
   const needsLogin = health?.loginRequired && !session;
   const needsKey = health && !health.mock && !health.loginRequired && !health.serverCredentials && !hasOwnKey;
-  const current = STUDIOS.find((s) => s.id === studio);
+  const current = STUDIOS.find((s) => s.id === studio) || STUDIOS[0];
+  const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
+  const openSettings = () => setSettings({ open: true, reason: null });
 
   return (
     <div className="app">
-      <a className="skip-link" href="#contenido">Saltar al contenido</a>
+      <a className="skip-link" href="#contenido">{t.skip}</a>
       <header className="topbar">
-        <button type="button" className="brand" onClick={() => goStudio('explore')} aria-label={`${BRAND.name}: inicio`}>
-          <span className="brand-mark" aria-hidden />
-          <span className="brand-name">{BRAND.name}</span>
+        <button type="button" className="brand" onClick={() => goStudio('explore')} aria-label={t.home}>
+          <Logo />
         </button>
-        {tabs('studio-nav')}
+        <nav className="studio-nav" aria-label={t.navLabel}>{STUDIOS.map(tabButton)}</nav>
         <div className="topbar-actions">
-          {health?.mock && <span className="badge">DEMO</span>}
-          {spentToday > 0 && <span className="spent" title="Estimación de créditos usados hoy en este navegador">≈ {spentToday.toFixed(1)} cr hoy</span>}
-          <button type="button" className="pill-btn theme-toggle" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-            aria-label={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'} title={theme === 'light' ? 'Modo oscuro' : 'Modo claro'}>
+          {health?.mock && <span className="badge">{t.demo}</span>}
+          {spentToday > 0 && <span className="spent" title={t.spentTodayHint}>{t.spentToday(spentToday.toFixed(1))}</span>}
+          <button type="button" className="pill-btn theme-toggle" onClick={toggleTheme}
+            aria-label={theme === 'light' ? t.themeToDark : t.themeToLight} title={theme === 'light' ? t.themeDark : t.themeLight}>
             <Icon name={theme === 'light' ? 'moon' : 'sun'} />
           </button>
-          <button type="button" className="pill-btn settings-btn" onClick={() => setSettings({ open: true, reason: null })} aria-label="Ajustes"><Icon name="settings" className="settings-icon" /><span className="tab-label">Ajustes</span></button>
+          <button type="button" className="pill-btn settings-btn" onClick={openSettings} aria-label={t.settings}>
+            <Icon name="settings" className="settings-icon" /><span className="tab-label">{t.settings}</span>
+          </button>
           {authEnabled && (session ? (
-            <button type="button" className="user-pill" onClick={() => window.confirm(`¿Cerrar la sesión de ${session.user.email}?`) && signOut()} title={`${session.user.email} · cerrar sesión`}>
-              {(session.user.email || '?')[0].toUpperCase()}
-            </button>
+            <AccountMenu email={session.user.email} onLibrary={() => goStudio('library')}
+              onOnboarding={() => { resetOnboarding(); setOnboarding(true); }} onSettings={openSettings} />
           ) : (
-            <button type="button" className="pill-btn" onClick={() => setLogin({ open: true, reason: null })}>Entrar</button>
+            <button type="button" className="pill-btn" onClick={() => setAuth({ mode: 'signin' })}>{COPY.account.signIn}</button>
           ))}
-          <button type="button" className="cta small" onClick={() => openFromExplore(['explore', 'characters', 'prompts'].includes(studio) ? 'image' : studio)}>Crear</button>
+          <button type="button" className="cta small" onClick={() => open(seeds[studio] ? studio : 'image')}>{t.create}</button>
         </div>
       </header>
 
       <main id="contenido" tabIndex={-1} className={`stage stage-${studio}`}>
         {needsLogin && (
-          <button type="button" className="notice notice-action" onClick={() => setLogin({ open: true, reason: null })}>
-            <b>Inicia sesión para crear.</b> Tu historial y tus archivos se guardan en tu nube y los ves desde cualquier dispositivo. →
+          <button type="button" className="notice notice-action" onClick={() => setAuth({ mode: 'signin' })}>
+            <b>{t.notices.login[0]}</b> {t.notices.login[1]} <Icon name="arrowRight" size={16} />
           </button>
         )}
         {needsKey && (
-          <button type="button" className="notice notice-action" onClick={() => setSettings({ open: true, reason: null })}>
-            <b>Conecta Higgsfield para empezar.</b> Añade tu clave (KEY_ID:KEY_SECRET) en Ajustes, o configura <code>HF_API_KEY_ID</code> y <code>HF_API_KEY_SECRET</code> en el servidor. →
+          <button type="button" className="notice notice-action" onClick={openSettings}>
+            <b>{t.notices.key[0]}</b> {t.notices.key[1]} <Icon name="arrowRight" size={16} />
           </button>
         )}
 
         {studio === 'explore' ? (
-          <Explore onOpen={openFromExplore} />
+          <Explore onOpen={open} />
         ) : studio === 'prompts' ? (
           <PromptLibrary page onUse={(entry, kind) => {
             const model = getModel(seeds[kind].modelId);
@@ -241,22 +252,29 @@ export default function Studio() {
         )}
       </main>
 
-      {mobileNav}
+      <nav className="studio-nav mobile-nav" aria-label={t.mobileNavLabel}>
+        {STUDIOS.filter((s) => MOBILE_MAIN.includes(s.id)).map(tabButton)}
+        <button type="button" className={`studio-tab ${inMore ? 'on' : ''}`} onClick={() => setMore(true)} aria-haspopup="dialog" aria-expanded={more}>
+          <Icon name="more" size={20} />
+          <span className="tab-label">{t.more}</span>
+          {moreRunning > 0 && <i className="dot">{moreRunning}</i>}
+        </button>
+      </nav>
       {more && (
         <Portal>
           <div className="sheet-backdrop more-backdrop" onClick={() => setMore(false)}>
-            <div className="sheet more-sheet" role="dialog" aria-label="Más opciones" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet more-sheet" role="dialog" aria-modal="true" aria-label={t.moreTitle} onClick={(e) => e.stopPropagation()}>
               <span className="grabber" aria-hidden />
               {STUDIOS.filter((s) => !MOBILE_MAIN.includes(s.id)).map((s) => (
                 <button type="button" key={s.id} className={`more-row ${studio === s.id ? 'on' : ''}`} onClick={() => goStudio(s.id)}>
                   <NavIcon id={s.id} /><span><b>{s.label}</b><em>{s.blurb}</em></span>
                 </button>
               ))}
-              <button type="button" className="more-row" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
-                <Icon name={theme === 'light' ? 'moon' : 'sun'} size={20} /><span><b>{theme === 'light' ? 'Modo oscuro' : 'Modo claro'}</b><em>Cambia entre morado y blanco con dorado.</em></span>
+              <button type="button" className="more-row" onClick={toggleTheme}>
+                <Icon name={theme === 'light' ? 'moon' : 'sun'} size={20} /><span><b>{theme === 'light' ? t.themeDark : t.themeLight}</b><em>{t.themeHint}</em></span>
               </button>
-              <button type="button" className="more-row" onClick={() => { setMore(false); setSettings({ open: true, reason: null }); }}>
-                <Icon name="settings" size={20} /><span><b>Ajustes</b><em>Tu clave de Higgsfield y el estado del servidor.</em></span>
+              <button type="button" className="more-row" onClick={() => { setMore(false); openSettings(); }}>
+                <Icon name="settings" size={20} /><span><b>{t.settings}</b><em>{t.settingsHint}</em></span>
               </button>
             </div>
           </div>
@@ -264,12 +282,14 @@ export default function Studio() {
       )}
 
       <footer className="site-footer">
-        <span>Creado por <a href={BRAND.repo} target="_blank" rel="noreferrer"><b>{BRAND.author}</b></a></span>
-        <span className="dim">Código abierto · MIT</span>
-        <span className="dim">Funciona con la API de Higgsfield</span>
+        <span>{t.footer.by} <a href={BRAND.repo} target="_blank" rel="noreferrer"><b>{BRAND.author}</b></a></span>
+        <span className="dim">{t.footer.license}</span>
+        <span className="dim">{t.footer.powered}</span>
       </footer>
 
-      {login.open && <LoginModal reason={login.reason} onClose={() => setLogin({ open: false, reason: null })} />}
+      <Toasts />
+      {onboarding && <Onboarding onFinish={finishOnboarding} />}
+      {auth && <AuthModal mode={auth.mode} reason={auth.reason} allowSignup={Boolean(health?.allowSignup)} onClose={() => setAuth(null)} />}
       {settings.open && <SettingsModal health={health} reason={settings.reason} onClose={() => setSettings({ open: false, reason: null })} />}
     </div>
   );
