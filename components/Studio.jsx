@@ -18,6 +18,8 @@ import SettingsModal from './SettingsModal';
 import Explore from './Explore';
 import PromptLibrary from './PromptLibrary';
 import Library from './Library';
+import Models from './Models';
+import Avatar from './Avatar';
 import AuthModal from './AuthModal';
 import AccountMenu from './AccountMenu';
 import Onboarding from './Onboarding';
@@ -32,6 +34,9 @@ const t = COPY.app;
 const PREFS_KEY = 'edavi.prefs';
 const SOUL_BY_VERSION = { v2: 'soul-2/generate', v1: 'soul-standard/generate', cinema: 'soul-cinema/generate' };
 const ROUTES = STUDIOS.map((s) => s.id);
+// Barra lateral (escritorio): secciones agrupadas como una consola.
+/** @type {Array<[string, string[]]>} */
+const SIDEBAR_GROUPS = [['main', ['explore', 'models']], ['create', ['image', 'video', 'transform', 'characters']], ['resources', ['prompts', 'library']]];
 // Móvil: máximo 5 destinos; el resto va en «Más».
 const MOBILE_MAIN = ['explore', 'image', 'video', 'prompts'];
 
@@ -55,7 +60,8 @@ function pickModelFor(studio, currentModelId, inputKey, fallbackId) {
 }
 
 const NAV_ICONS = {
-  explore: <><path d="M12 3 3 8l9 5 9-5-9-5Z" /><path d="m3 13 9 5 9-5" /></>,
+  explore: <><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z" /></>,
+  models: <><path d="M12 3 3 8l9 5 9-5-9-5Z" /><path d="m3 13 9 5 9-5" /></>,
   image: <><rect x="4" y="5" width="16" height="14" rx="3" /><circle cx="9.5" cy="10" r="1.6" /><path d="m5 17 4.5-4.5 3.5 3.5 2.5-2.5L19 17" /></>,
   video: <><rect x="3.5" y="6" width="12" height="12" rx="3" /><path d="m15.5 10.5 5-3v9l-5-3" /></>,
   transform: <><path d="M4 8h12l-3-3M20 16H8l3 3" /></>,
@@ -191,8 +197,9 @@ export default function Studio() {
   }, [open]);
 
   const today = new Date().toDateString();
-  const spentToday = jobs
-    .filter((j) => j.status === 'completed' && j.estimate && new Date(j.createdAt).toDateString() === today)
+  const jobsToday = jobs.filter((j) => new Date(j.createdAt).toDateString() === today);
+  const spentToday = jobsToday
+    .filter((j) => j.status === 'completed' && j.estimate)
     .reduce((sum, j) => sum + Number(j.estimate.credits || 0), 0);
 
   const tabButton = (s) => {
@@ -217,11 +224,46 @@ export default function Studio() {
   return (
     <div className="app">
       <a className="skip-link" href="#contenido">{t.skip}</a>
+      <aside className="sidebar" aria-label={t.sidebar.label}>
+        <button type="button" className="brand" onClick={() => goStudio('explore')} aria-label={t.home}>
+          <Logo />
+        </button>
+        <nav className="side-nav" aria-label={t.navLabel}>
+          {SIDEBAR_GROUPS.map(([group, ids]) => (
+            <div className="side-group" key={group}>
+              <p className="side-group-label">{t.sidebar.groups[group]}</p>
+              {ids.map((id) => {
+                const s = STUDIOS.find((x) => x.id === id);
+                const count = running.filter((j) => j.studio === id).length;
+                return (
+                  <button type="button" key={id} className={`side-link ${studio === id ? 'on' : ''}`} onClick={() => goStudio(id)} aria-current={studio === id ? 'page' : undefined}>
+                    <NavIcon id={id} />
+                    <span>{s.label}</span>
+                    {count > 0 && <i className="dot" title={t.running(count)}>{count}</i>}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+        <div className="side-card">
+          <div className="side-card-head">
+            <Avatar size="sm" mood={running.length ? 'thinking' : 'idle'} />
+            <span className="mono">{t.sidebar.cardKicker}</span>
+          </div>
+          <p><b>{t.sidebar.cardGenerations(jobsToday.length)}</b><span className="dim">{t.sidebar.cardSpent(spentToday.toFixed(1))}</span></p>
+          <button type="button" className="cta small" onClick={() => open(seeds[studio] ? studio : 'image')}><Icon name="sparkles" size={16} /> {t.sidebar.cardCta}</button>
+        </div>
+      </aside>
       <header className="topbar">
         <button type="button" className="brand" onClick={() => goStudio('explore')} aria-label={t.home}>
           <Logo />
         </button>
         <nav className="studio-nav" aria-label={t.navLabel}>{STUDIOS.map(tabButton)}</nav>
+        <div className="topbar-title">
+          <b>{current.label}</b>
+          <span className="dim">{current.blurb}</span>
+        </div>
         <div className="topbar-actions">
           {health?.mock && <span className="badge">{t.demo}</span>}
           {spentToday > 0 && <span className="spent" title={t.spentTodayHint}>{t.spentToday(spentToday.toFixed(1))}</span>}
@@ -261,6 +303,8 @@ export default function Studio() {
         <ErrorBoundary resetKey={studio}>
         {studio === 'explore' ? (
           <Explore onOpen={open} />
+        ) : studio === 'models' ? (
+          <Models onOpen={open} />
         ) : studio === 'library' ? (
           <Library onReuse={onReuse} onCreate={() => open('image')} />
         ) : studio === 'prompts' ? (

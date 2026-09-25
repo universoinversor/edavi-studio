@@ -41,7 +41,7 @@
   text-transform: uppercase;
 }
 .eyebrow i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-hi); box-shadow: 0 0 10px var(--accent-hi); animation: pulse 2s ease-in-out infinite; }
-.hero h1 { margin: 0; display: grid; gap: 2px; font-family: var(--font-body); font-weight: 800; letter-spacing: -0.035em; line-height: 1.02; }
+.hero h1, .hero h2 { margin: 0; display: grid; gap: 2px; font-family: var(--font-body); font-weight: 800; letter-spacing: -0.035em; line-height: 1.02; }
 .hero-line { display: block; font-size: clamp(38px, 4.6vw, 72px); }
 .hero-line.dim-line { font-size: clamp(22px, 2.2vw, 34px); font-weight: 500; color: var(--muted); letter-spacing: -0.02em; margin-bottom: 6px; }
 .hero-sub { margin: 0; max-width: 54ch; color: var(--muted); font-size: 16px; line-height: 1.6; }

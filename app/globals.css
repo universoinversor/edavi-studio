@@ -202,7 +202,7 @@ code { font-family: var(--font-mono); font-size: 0.9em; color: var(--accent-hi);
 .tile-name { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; }
 .tile-desc { color: var(--muted); font-size: 12.5px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .tag { padding: 2px 6px; border-radius: 5px; font: 700 10px/1.3 var(--font-mono); letter-spacing: 0.04em; font-style: normal; transform: rotate(-3deg); }
-.tag-top { background: var(--accent); color: #fff; }
+.tag-top { background: #7d3cf0; color: #fff; } /* AA: 5:1 con texto blanco de 10px */
 .tag-nuevo { background: var(--lilac); color: var(--bg); }
 
 .section-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 18px; margin: 18px 0 14px; }

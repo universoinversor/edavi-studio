@@ -38,6 +38,7 @@ Creado por **EDAVI**. Código abierto, en español, listo para conectar tu clave
 - **🔒 Seguro:** tus claves viven en el servidor, el proxy solo permite rutas conocidas y puedes protegerlo con contraseña.
 - **🌗 Tema claro y oscuro:** oscuro morado con cristal, o claro marfil con dorado metálico. Se recuerda en cada navegador.
 - **🤖 Avatar EDAVI:** la mascota de la marca en la portada, en el inicio de sesión y en los estados vacíos (`public/edavi-avatar.png`).
+- **🧭 Consola estilo Higgsfield:** barra lateral, panel con saludo y métricas del día, y explorador de todos los modelos con buscador, filtros y orden.
 - **📱 Móvil tipo app:** barra de navegación inferior con iconos.
 - **🧪 Modo demo:** prueba toda la interfaz sin gastar créditos.
 
@@ -89,7 +90,7 @@ Si el servidor no tiene claves, cada persona puede poner la suya en **Ajustes** 
 Cuando Higgsfield publique modelos nuevos o cambie parámetros:
 
 ```bash
-npm run sync:catalog   # regenera lib/catalog.json desde la documentación oficial
+npm run sync:catalog   # regenera lib/catalog.json desde la documentación de cada modelo (dash.higgsfield.ai)
 npm test               # comprueba que todo sigue funcionando
 npm run typecheck      # verificación de tipos (JSDoc + checkJs)
 ```

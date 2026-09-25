@@ -5,6 +5,7 @@ import { useJobs, withArchive } from '@/lib/jobs';
 import { useMascotMood } from '@/lib/mascot';
 import { COPY } from '@/lib/copy';
 import Avatar from './Avatar';
+import Dashboard from './Dashboard';
 import Icon from './Icon';
 
 const t = COPY.explore;
@@ -58,14 +59,15 @@ export default function Explore({ onOpen }) {
 
   return (
     <div className="explore">
+      <Dashboard onOpen={onOpen} />
       <section className="hero" aria-labelledby="hero-title">
         <div className="hero-copy">
           <span className="eyebrow"><i aria-hidden /> {t.eyebrow}</span>
-          <h1 id="hero-title">
+          <h2 id="hero-title">
             <span className="hero-line dim-line">{t.hero[0]}</span>
             <span className="hero-line shine">{t.hero[1]}</span>
             <span className="hero-line">{t.hero[2]}</span>
-          </h1>
+          </h2>
           <p className="hero-sub">{t.sub(total)}</p>
           <div className="hero-ctas">
             <button type="button" className="cta" onClick={() => onOpen('image')}><Icon name="sparkles" /> {t.ctaPrimary}</button>
@@ -137,6 +139,7 @@ export default function Explore({ onOpen }) {
             <button type="button" className="pill-btn" onClick={() => setShowAll((v) => !v)} aria-expanded={showAll}>
               {showAll ? t.showLess : t.showAll(catalog.length)}
             </button>
+            <button type="button" className="pill-btn" onClick={() => onOpen('models')}><Icon name="layers" size={16} /> {COPY.dashboard.models}</button>
           </div>
         )}
       </section>

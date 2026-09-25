@@ -1,6 +1,6 @@
 {
- "source": "https://docs.higgsfield.ai/docs/llms.txt",
- "syncedAt": "2026-09-24T16:18:28.427Z",
+ "source": "https://dash.higgsfield.ai/models/<endpoint>/llms.txt",
+ "syncedAt": "2026-09-25T23:25:13.032Z",
  "models": [
   {
    "id": "cinema-studio-4/generate",
@@ -255,10 +255,9 @@
    "family": "Genjutsu",
    "familyDescription": "Transfer motion or replace an object in a source video.",
    "workflow": "Motion transfer",
-   "endpoint": "higgsfiled/genjutsu/motion-transfer/v1.0",
+   "endpoint": "higgsfield/genjutsu/motion-transfer/v1.0",
    "output": "video",
    "notes": [
-    "Use the exact API slug, including the spelling higgsfiled.",
     "The source video must be at least 4 seconds. Videos longer than 30 seconds are trimmed to 30 seconds; output duration follows the prepared source video.",
     "Provide 1–8 image references. The prompt is optional and defaults to an empty string."
    ],
@@ -316,10 +315,9 @@
    "family": "Genjutsu",
    "familyDescription": "Transfer motion or replace an object in a source video.",
    "workflow": "Object swap",
-   "endpoint": "higgsfiled/genjutsu/object-swap/v1.0",
+   "endpoint": "higgsfield/genjutsu/object-swap/v1.0",
    "output": "video",
    "notes": [
-    "Use the exact API slug, including the spelling higgsfiled.",
     "The source video must be at least 4 seconds. Videos longer than 30 seconds are trimmed to 30 seconds; output duration follows the prepared source video.",
     "Provide 1–8 image references. The prompt is optional and defaults to an empty string.",
     "The source video must contain at least 409,600 pixels per frame (width × height)."
@@ -3400,7 +3398,7 @@
       }
      }
     ],
-    "title": "Marketing Studio Image 2.0 Alpha",
+    "title": "Marketing Studio Image",
     "required": [
      "prompt"
     ],
@@ -3525,7 +3523,7 @@
       }
      }
     ],
-    "title": "Marketing Studio Image 2.5 Flare",
+    "title": "GPT Image 2.5 Flare",
     "required": [
      "prompt"
     ],
@@ -3653,7 +3651,7 @@
       }
      }
     ],
-    "title": "Marketing Studio Image 2.5 Sunburst",
+    "title": "GPT Image 2.5 Sunburst",
     "required": [
      "prompt"
     ],
@@ -5082,7 +5080,8 @@
      "resolution": {
       "enum": [
        "480p",
-       "720p"
+       "720p",
+       "1080p"
       ],
       "type": "string",
       "default": "720p"
@@ -5175,7 +5174,8 @@
      "resolution": {
       "enum": [
        "480p",
-       "720p"
+       "720p",
+       "1080p"
       ],
       "type": "string",
       "default": "720p"
@@ -5251,7 +5251,8 @@
      "resolution": {
       "enum": [
        "480p",
-       "720p"
+       "720p",
+       "1080p"
       ],
       "type": "string",
       "default": "720p"
@@ -5345,7 +5346,8 @@
      "resolution": {
       "enum": [
        "480p",
-       "720p"
+       "720p",
+       "1080p"
       ],
       "type": "string",
       "default": "720p"
@@ -5434,7 +5436,8 @@
      "resolution": {
       "enum": [
        "480p",
-       "720p"
+       "720p",
+       "1080p"
       ],
       "type": "string",
       "default": "720p"
@@ -5483,13 +5486,49 @@
     "custom_reference_strength=0 uses the selected style's default character strength; it does not disable the character reference."
    ],
    "schema": {
+    "type": "object",
+    "title": "Soul Playground",
+    "required": [
+     "prompt"
+    ],
     "properties": {
+     "seed": {
+      "type": "integer",
+      "title": "Seed",
+      "default": null,
+      "maximum": 1000000,
+      "minimum": 1
+     },
      "prompt": {
+      "type": "string",
       "title": "Prompt",
-      "type": "string"
+      "description": "Write your prompt here"
+     },
+     "style_id": {
+      "type": "string",
+      "title": "Soul Style",
+      "format": "uuid",
+      "default": null
+     },
+     "batch_size": {
+      "enum": [
+       1,
+       4
+      ],
+      "type": "integer",
+      "title": "Result images",
+      "default": 1
+     },
+     "resolution": {
+      "enum": [
+       "720p",
+       "1080p"
+      ],
+      "type": "string",
+      "title": "Resolution",
+      "default": "720p"
      },
      "aspect_ratio": {
-      "default": "4:3",
       "enum": [
        "9:16",
        "16:9",
@@ -5499,100 +5538,24 @@
        "2:3",
        "3:2"
       ],
+      "type": "string",
       "title": "Aspect Ratio",
-      "type": "string"
+      "default": "4:3"
      },
      "enhance_prompt": {
-      "default": false,
+      "type": "boolean",
       "title": "Enhance Prompt",
-      "type": "boolean"
-     },
-     "style_id": {
-      "default": "464ea177-8d40-4940-8d9d-b438bab269c7",
-      "format": "uuid",
-      "title": "Style Id",
-      "type": "string"
+      "default": true
      },
      "style_strength": {
+      "type": "number",
+      "title": "Style strength",
+      "format": "float",
       "default": 1,
       "maximum": 1,
-      "minimum": 0,
-      "title": "Style Strength",
-      "type": "number"
-     },
-     "resolution": {
-      "default": "720p",
-      "enum": [
-       "720p",
-       "1080p"
-      ],
-      "title": "Resolution",
-      "type": "string"
-     },
-     "seed": {
-      "anyOf": [
-       {
-        "maximum": 1000000,
-        "minimum": 1,
-        "type": "integer"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "default": null,
-      "title": "Seed"
-     },
-     "custom_reference_id": {
-      "anyOf": [
-       {
-        "format": "uuid",
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "default": null,
-      "title": "Custom Reference Id"
-     },
-     "custom_reference_strength": {
-      "default": 1,
-      "maximum": 1,
-      "minimum": 0,
-      "title": "Custom Reference Strength",
-      "type": "number"
-     },
-     "image_reference_url": {
-      "anyOf": [
-       {
-        "format": "uri",
-        "maxLength": 2083,
-        "minLength": 1,
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "default": null,
-      "title": "Image Reference Url"
-     },
-     "batch_size": {
-      "default": 1,
-      "enum": [
-       1,
-       4
-      ],
-      "title": "Batch Size",
-      "type": "integer"
+      "minimum": 0
      }
-    },
-    "required": [
-     "prompt"
-    ],
-    "title": "SoulParamsSchema",
-    "type": "object"
+    }
    },
    "docs": "https://docs.higgsfield.ai/docs/models/soul-standard/generate",
    "studio": "image"
@@ -5707,13 +5670,48 @@
     "When using custom_reference_id, set custom_reference_strength to a value greater than 0 and no greater than 1. The schema accepts 0, but the current runtime fails to process it for a character reference."
    ],
    "schema": {
+    "type": "object",
+    "title": "Soul V2 Playground",
+    "required": [
+     "prompt"
+    ],
     "properties": {
+     "seed": {
+      "type": "integer",
+      "title": "Seed",
+      "default": null,
+      "maximum": 1000000,
+      "minimum": 1
+     },
      "prompt": {
+      "type": "string",
       "title": "Prompt",
-      "type": "string"
+      "description": "Write your prompt here"
+     },
+     "style_id": {
+      "type": "string",
+      "title": "Soul Style",
+      "format": "uuid"
+     },
+     "batch_size": {
+      "enum": [
+       1,
+       4
+      ],
+      "type": "integer",
+      "title": "Result images",
+      "default": 1
+     },
+     "resolution": {
+      "enum": [
+       "720p",
+       "1080p"
+      ],
+      "type": "string",
+      "title": "Resolution",
+      "default": "720p"
      },
      "aspect_ratio": {
-      "default": "1:1",
       "enum": [
        "9:16",
        "16:9",
@@ -5723,77 +5721,16 @@
        "2:3",
        "3:2"
       ],
+      "type": "string",
       "title": "Aspect Ratio",
-      "type": "string"
-     },
-     "resolution": {
-      "default": "720p",
-      "enum": [
-       "720p",
-       "1080p"
-      ],
-      "title": "Resolution",
-      "type": "string"
+      "default": "4:3"
      },
      "enhance_prompt": {
-      "default": false,
+      "type": "boolean",
       "title": "Enhance Prompt",
-      "type": "boolean"
-     },
-     "custom_reference_id": {
-      "anyOf": [
-       {
-        "format": "uuid",
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "default": null,
-      "title": "Custom Reference Id"
-     },
-     "custom_reference_strength": {
-      "default": 1,
-      "maximum": 1,
-      "minimum": 0,
-      "title": "Custom Reference Strength",
-      "type": "number"
-     },
-     "style_id": {
-      "default": "3db34ab5-3439-4317-9e03-08dc30852e69",
-      "format": "uuid",
-      "title": "Style Id",
-      "type": "string"
-     },
-     "style_strength": {
-      "default": 1,
-      "maximum": 1,
-      "minimum": 0,
-      "title": "Style Strength",
-      "type": "number"
-     },
-     "seed": {
-      "maximum": 1000000,
-      "minimum": 1,
-      "title": "Seed",
-      "type": "integer"
-     },
-     "batch_size": {
-      "default": 1,
-      "enum": [
-       1,
-       4
-      ],
-      "title": "Batch Size",
-      "type": "integer"
+      "default": true
      }
-    },
-    "required": [
-     "prompt"
-    ],
-    "title": "SoulV2ParamsSchema",
-    "type": "object"
+    }
    },
    "docs": "https://docs.higgsfield.ai/docs/models/soul-2/generate",
    "studio": "image"
