@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import { enumLabel } from '@/lib/schema';
 import { generation } from '@/lib/providers';
 import { friendlyError } from '@/lib/errors';
+import { COPY } from '@/lib/copy';
+
+const tf = COPY.fields;
 import { useCharacters } from '@/lib/characters';
 import Icon from './Icon';
 
@@ -14,7 +17,7 @@ function Label({ field, children, aside }) {
     <div className="field-label">
       <span>
         {field.label}
-        {field.required && <b className="req" title="Obligatorio">*</b>}
+        {field.required && <b className="req" title={tf.required} aria-label={tf.required}>*</b>}
       </span>
       {aside ?? children}
     </div>
@@ -32,7 +35,7 @@ export function PromptField({ field, value, onChange, onSubmit, big }) {
         value={value || ''}
         rows={big ? 5 : 2}
         maxLength={max}
-        placeholder={big ? 'Describe la escena: sujeto, acción, luz, cámara, atmósfera…' : 'Lo que NO quieres ver…'}
+        placeholder={big ? tf.promptPlaceholder : tf.negativePlaceholder}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
           if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); onSubmit?.(); }
@@ -57,7 +60,7 @@ export function TagsField({ field, value, onChange }) {
     <label className="field">
       <Label field={field} />
       <input
-        type="text" value={text} placeholder="123456, 789012"
+        type="text" value={text} placeholder={tf.tagsPlaceholder}
         onChange={(e) => { setText(e.target.value); onChange(e.target.value.split(',').map((s) => s.trim()).filter(Boolean)); }}
       />
     </label>
@@ -85,7 +88,7 @@ export function EnumField({ field, value, onChange }) {
           const raw = e.target.value;
           onChange(raw === '' ? undefined : options.find((o) => String(o) === raw));
         }}>
-          {!field.required && field.prop.default === undefined && <option value="">— Sin especificar —</option>}
+          {!field.required && field.prop.default === undefined && <option value="">{tf.unset}</option>}
           {options.map((o) => <option key={o} value={o}>{enumLabel(o)}</option>)}
         </select>
       </label>
@@ -147,11 +150,11 @@ export function SeedField({ field, value, onChange }) {
   const max = field.prop.maximum ?? 2147483647;
   return (
     <label className="field">
-      <Label field={field} aside={<span className="dim mono">vacío = aleatoria</span>} />
+      <Label field={field} aside={<span className="dim mono">{tf.seedEmpty}</span>} />
       <div className="inline">
-        <input type="number" value={value ?? ''} min={min} max={max} placeholder="Aleatoria"
+        <input type="number" value={value ?? ''} min={min} max={max} placeholder={tf.seedPlaceholder}
           onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
-        <button type="button" className="icon-btn" title="Semilla al azar"
+        <button type="button" className="icon-btn" title={tf.seedRandom} aria-label={tf.seedRandom}
           onClick={() => onChange(min + Math.floor(Math.random() * Math.min(max - min, 999999)))}><Icon name="dice" /></button>
       </div>
     </label>
@@ -167,15 +170,15 @@ export function ColorsField({ field, value, onChange }) {
   const list = value || [];
   return (
     <div className="field">
-      <Label field={field} aside={<span className="dim mono">{list.length ? `${list.length} colores` : 'opcional'}</span>} />
+      <Label field={field} aside={<span className="dim mono">{tf.colors(list.length)}</span>} />
       <div className="swatches">
         {list.map((c, i) => (
           <span key={i} className="swatch">
             <input type="color" value={toHex(c.rgb)} onChange={(e) => onChange(list.map((x, j) => (j === i ? { rgb: fromHex(e.target.value) } : x)))} />
-            <button type="button" onClick={() => onChange(list.filter((_, j) => j !== i))} aria-label="Quitar color">×</button>
+            <button type="button" onClick={() => onChange(list.filter((_, j) => j !== i))} aria-label={tf.removeColor}>×</button>
           </span>
         ))}
-        <button type="button" className="swatch-add" onClick={() => onChange([...list, { rgb: [255, 75, 31] }])}>+ color</button>
+        <button type="button" className="swatch-add" onClick={() => onChange([...list, { rgb: [255, 75, 31] }])}>{tf.addColor}</button>
       </div>
     </div>
   );
@@ -188,7 +191,7 @@ export function ColorField({ field, value, onChange }) {
       <div className="inline">
         {value && <input type="color" value={toHex(value.rgb)} onChange={(e) => onChange({ rgb: fromHex(e.target.value) })} />}
         <button type="button" className="ghost-btn" onClick={() => onChange(value ? undefined : { rgb: [255, 255, 255] })}>
-          {value ? 'Quitar' : 'Elegir'}
+          {value ? tf.remove : tf.choose}
         </button>
       </div>
     </div>
@@ -206,21 +209,21 @@ export function ShotsField({ field, value, onChange }) {
   const set = (next) => onChange(next);
   return (
     <div className="field">
-      <Label field={field} aside={<span className="mono dim">{shots.length}/{maxShots} · {total}s en total</span>} />
+      <Label field={field} aside={<span className="mono dim">{tf.shots(shots.length, maxShots, total)}</span>} />
       <ol className="shots">
         {shots.map((s, i) => (
           <li key={i}>
             <span className="shot-n mono">{String(i + 1).padStart(2, '0')}</span>
-            <textarea rows={2} maxLength={itemProps.prompt?.maxLength} value={s.prompt} placeholder={`Plano ${i + 1}…`}
+            <textarea rows={2} maxLength={itemProps.prompt?.maxLength} value={s.prompt} placeholder={tf.shotPlaceholder(i + 1)}
               onChange={(e) => set(shots.map((x, j) => (j === i ? { ...x, prompt: e.target.value } : x)))} />
-            <input type="number" min={1} max={maxDur} value={s.duration} aria-label="Duración (s)"
+            <input type="number" min={1} max={maxDur} value={s.duration} aria-label={tf.shotDuration}
               onChange={(e) => set(shots.map((x, j) => (j === i ? { ...x, duration: e.target.value } : x)))} />
-            {shots.length > 1 && <button type="button" className="icon-btn" onClick={() => set(shots.filter((_, j) => j !== i))} aria-label="Quitar toma">×</button>}
+            {shots.length > 1 && <button type="button" className="icon-btn" onClick={() => set(shots.filter((_, j) => j !== i))} aria-label={tf.removeShot}>×</button>}
           </li>
         ))}
       </ol>
       {shots.length < maxShots && (
-        <button type="button" className="ghost-btn" onClick={() => set([...shots, { prompt: '', duration: 3 }])}>+ Añadir toma</button>
+        <button type="button" className="ghost-btn" onClick={() => set([...shots, { prompt: '', duration: 3 }])}>{tf.addShot}</button>
       )}
     </div>
   );
@@ -230,7 +233,7 @@ export function ShotsField({ field, value, onChange }) {
 
 function Preview({ url, accept }) {
   if (accept === 'video') return <video src={url} muted loop playsInline autoPlay />;
-  if (accept === 'audio') return <span className="audio-chip mono">♪ audio</span>;
+  if (accept === 'audio') return <span className="audio-chip mono">{tf.audio}</span>;
   return <img src={url} alt="" />;
 }
 
@@ -273,7 +276,7 @@ function DropZone({ accept, onFiles, multiple, children, disabled }) {
   );
 }
 
-const NOUN = { image: ['imagen', 'imágenes'], video: ['video', 'videos'], audio: ['audio', 'audios'] };
+const NOUN = tf.nouns;
 
 function MediaGlyph({ kind }) {
   const paths = {
@@ -289,10 +292,10 @@ function UploadCard({ field, many, max }) {
   const [one, plural] = NOUN[field.accept];
   return (
     <span className="upload-card">
-      {!field.required && <em className="optional">Opcional</em>}
+      {!field.required && <em className="optional">{tf.optional}</em>}
       <span className="glyphs"><MediaGlyph kind={field.accept} /></span>
-      <b>{many ? `Subir ${plural}` : `Subir ${one}`}</b>
-      <span className="upload-sub">{many ? `Hasta ${max} · ` : ''}{ACCEPT_LABEL[field.accept]}</span>
+      <b>{tf.upload(many ? plural : one)}</b>
+      <span className="upload-sub">{many ? tf.upTo(max) : ''}{ACCEPT_LABEL[field.accept]}</span>
     </span>
   );
 }
@@ -304,19 +307,19 @@ export function MediaField({ field, value, onChange, onBusy }) {
   return (
     <div className="field">
       <Label field={field} aside={
-        <button type="button" className="link-btn mono" onClick={() => setPasting((p) => !p)}>{pasting ? 'subir archivo' : 'pegar URL'}</button>
+        <button type="button" className="link-btn mono" onClick={() => setPasting((p) => !p)}>{pasting ? tf.uploadFile : tf.pasteUrl}</button>
       } />
       {pasting ? (
         <input type="url" placeholder="https://…" value={value || ''} onChange={(e) => onChange(e.target.value)} />
       ) : value ? (
         <div className="media-slot filled">
           <Preview url={value} accept={field.accept} />
-          <button type="button" className="media-remove" onClick={() => onChange(undefined)} aria-label="Quitar">×</button>
+          <button type="button" className="media-remove" onClick={() => onChange(undefined)} aria-label={tf.remove}>×</button>
         </div>
       ) : (
         <DropZone accept={field.accept} onFiles={(files, url) => (files[0] ? run(files[0]) : url && onChange(url))} disabled={Boolean(upload && !upload.error)}>
           {upload && !upload.error ? (
-            <span className="upload-progress"><i style={{ width: `${Math.round(upload.progress * 100)}%` }} />Subiendo {Math.round(upload.progress * 100)}%</span>
+            <span className="upload-progress"><i style={{ width: `${Math.round(upload.progress * 100)}%` }} />{tf.uploadingPct(Math.round(upload.progress * 100))}</span>
           ) : (
             <UploadCard field={field} />
           )}
@@ -341,7 +344,7 @@ export function MediaListField({ field, value, onChange, onBusy }) {
     if (url && !files.length) { onChange([...latest.current, url].slice(0, max)); return; }
     const room = max - latest.current.length;
     const chosen = files.slice(0, room);
-    if (files.length > room) setError(`Máximo ${max}; se ignoraron ${files.length - room}.`);
+    if (files.length > room) setError(tf.tooMany(max, files.length - room));
     setBusy((b) => b + chosen.length);
     await Promise.all(chosen.map(async (f) => {
       try {
@@ -369,7 +372,7 @@ export function MediaListField({ field, value, onChange, onBusy }) {
           <div className="media-slot filled small" key={u + i}>
             <span className="media-index mono">{i + 1}</span>
             <Preview url={u} accept={field.accept} />
-            <button type="button" className="media-remove" onClick={() => onChange(list.filter((_, j) => j !== i))} aria-label="Quitar">×</button>
+            <button type="button" className="media-remove" onClick={() => onChange(list.filter((_, j) => j !== i))} aria-label={tf.remove}>×</button>
           </div>
         ))}
         {Array.from({ length: busy }, (_, i) => <div key={`b${i}`} className="media-slot small loading" />)}
@@ -404,10 +407,10 @@ export function StyleField({ field, value, onChange, version }) {
   const current = styles?.find((s) => s.id === value);
   return (
     <div className="field">
-      <Label field={field} aside={<button type="button" className="link-btn mono" onClick={() => setOpen((o) => !o)}>{open ? 'cerrar' : 'ver estilos'}</button>} />
+      <Label field={field} aside={<button type="button" className="link-btn mono" onClick={() => setOpen((o) => !o)}>{open ? tf.closeStyles : tf.styles}</button>} />
       <button type="button" className="style-current" onClick={() => setOpen((o) => !o)}>
         {current?.preview_url && <img src={current.preview_url} alt="" />}
-        <span>{current?.name || (value ? 'Estilo por defecto' : 'Sin estilo')}</span>
+        <span>{current?.name || (value ? tf.defaultStyle : tf.noStyle)}</span>
       </button>
       {error && <p className="field-error">{error}</p>}
       {open && styles && (
@@ -441,10 +444,10 @@ export function PresetField({ field, value, onChange }) {
   return (
     <div className="field">
       <Label field={field} />
-      <input type="search" placeholder="Buscar preset…" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <input type="search" placeholder={tf.searchPreset} aria-label={tf.searchPreset} value={search} onChange={(e) => setSearch(e.target.value)} />
       {error && <p className="field-error">{error}</p>}
       <div className="preset-list">
-        {value && <button type="button" className="chip on" onClick={() => onChange(undefined)}>Quitar preset ×</button>}
+        {value && <button type="button" className="chip on" onClick={() => onChange(undefined)}>{tf.removePreset}</button>}
         {(items || []).map((p) => (
           <button type="button" key={p.id} className={`chip ${p.id === value ? 'on' : ''}`} onClick={() => onChange(p.id)}>
             {p.name}{p.metadata?.group_name && <em className="mono dim"> · {p.metadata.group_name}</em>}
@@ -461,10 +464,10 @@ export function ReferenceField({ field, value, onChange, version }) {
     <label className="field">
       <Label field={field} />
       <select value={value || ''} onChange={(e) => onChange(e.target.value || undefined)}>
-        <option value="">— Ninguno —</option>
+        <option value="">{tf.none}</option>
         {characters.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
       </select>
-      {!characters.length && <span className="hint">Crea uno en el estudio «Personajes» ({version || 'SOUL'}).</span>}
+      {!characters.length && <span className="hint">{tf.createCharacter(version)}</span>}
     </label>
   );
 }

@@ -204,3 +204,19 @@
   .avatar-img, .avatar-orbit, .avatar-halo { animation: none !important; }
   .toast, .account-menu { animation: none; }
 }
+
+/* ---------- Creador: borrador recuperado ---------- */
+
+.draft-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-md);
+  background: rgba(var(--a-rgb), 0.1);
+  box-shadow: inset 0 0 0 1px rgba(var(--a2-rgb), 0.25);
+  font-size: 12.5px;
+}
+.draft-note .icon { color: var(--accent-hi); }
+.draft-note span { flex: 1; }
+.draft-note .link-btn { font-weight: 600; }

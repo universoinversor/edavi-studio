@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { STUDIOS, defaultModelFor, familiesForStudio, getModel } from '@/lib/catalog';
 import { getHealth, loadSettings } from '@/lib/api';
 import { useJobs } from '@/lib/jobs';
@@ -10,6 +10,7 @@ import { applyPromptEntry } from '@/lib/plan';
 import { authEnabled, useAuth } from '@/lib/auth';
 import { setTheme, useTheme } from '@/lib/theme';
 import { needsOnboarding, resetOnboarding } from '@/lib/onboarding';
+import { toast } from '@/lib/toast';
 import Composer from './Composer';
 import Gallery from './Gallery';
 import CharactersStudio from './CharactersStudio';
@@ -116,6 +117,21 @@ export default function Studio() {
     };
   }, []);
 
+  // Aviso cuando termina una generación, con acceso directo a su estudio.
+  useEffect(() => {
+    const onFinished = (e) => {
+      const { status, family, studio: where } = e.detail || {};
+      if (status === 'canceled') return;
+      const ok = status === 'completed';
+      toast(ok ? COPY.toasts.done(family) : COPY.toasts.failed(family), {
+        tone: ok ? 'success' : 'error',
+        action: { label: COPY.toasts.view, onClick: () => goStudioRef.current?.(where) },
+      });
+    };
+    window.addEventListener('edavi:job-finished', onFinished);
+    return () => window.removeEventListener('edavi:job-finished', onFinished);
+  }, []);
+
   useEffect(() => {
     document.title = running.length ? `(${running.length}) ${BRAND.name}` : BRAND.name;
   }, [running.length]);
@@ -131,6 +147,9 @@ export default function Studio() {
     requestAnimationFrame(() => document.getElementById('contenido')?.focus({ preventScroll: true }));
   }, []);
 
+  const goStudioRef = useRef(goStudio);
+  goStudioRef.current = goStudio;
+
   const rememberModel = useCallback((studioId, modelId) => {
     const prefs = readPrefs();
     writePrefs({ ...prefs, models: { ...prefs.models, [studioId]: modelId } });
@@ -138,7 +157,8 @@ export default function Studio() {
   }, []);
 
   const plant = useCallback((studioId, modelId, values) => {
-    setSeeds((s) => ({ ...s, [studioId]: { modelId, values, nonce: (s[studioId]?.nonce || 0) + 1 } }));
+    // «explicit»: acción del usuario (reusar, animar, prompt…): manda sobre el borrador guardado.
+    setSeeds((s) => ({ ...s, [studioId]: { modelId, values, explicit: true, at: Date.now(), nonce: (s[studioId]?.nonce || 0) + 1 } }));
     goStudio(studioId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [goStudio]);

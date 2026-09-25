@@ -1,45 +1,47 @@
 'use client';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { familiesForStudio, getModel, models as allModels, soulVersion, workflowLabel } from '@/lib/catalog';
 import { buildPayload, describeFields, validatePayload } from '@/lib/schema';
 import { animateTargets, applyPromptEntry, carryValues, chainedPayload, compareCandidates, variationPayloads } from '@/lib/plan';
 import { GENERAL_TIPS, MODEL_TIPS } from '@/lib/prompt-bank';
-import PromptLibrary from './PromptLibrary';
 import { enqueue, setEstimate } from '@/lib/jobs';
 import { generation } from '@/lib/providers';
+import { clearDraft, hasContent, loadDraft, saveDraft } from '@/lib/drafts';
+import { COPY } from '@/lib/copy';
+import { toast } from '@/lib/toast';
+import { useDialog } from '@/lib/useDialog';
 import {
   ColorField, ColorsField, EnumField, MediaField, MediaListField, NumberField, PresetField, PromptField,
   RangeField, ReferenceField, SeedField, ShotsField, StringField, StyleField, TagsField, ToggleField,
 } from './fields';
+import PromptLibrary from './PromptLibrary';
 import Portal from './Portal';
 import Icon from './Icon';
 
+const t = COPY.composer;
 const ANIMATE_DEFAULT = 'seedance-2-5/image-to-video';
 const newGroup = () => `g${Date.now().toString(36)}`;
 
 function FamilySheet({ studio, currentFamily, onPick, onClose }) {
   const families = familiesForStudio(studio);
-  useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const ref = useDialog(onClose);
   return (
     <div className="sheet-backdrop" onClick={onClose}>
-      <div className="sheet" role="dialog" aria-label="Elegir modelo" onClick={(e) => e.stopPropagation()}>
+      <div ref={ref} className="sheet" role="dialog" aria-modal="true" aria-labelledby="family-title" onClick={(e) => e.stopPropagation()}>
         <header className="sheet-head">
-          <h2>Elige un modelo</h2>
-          <span className="mono dim">{families.length} familias</span>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label="Cerrar">×</button>
+          <h2 id="family-title">{t.chooseModel}</h2>
+          <span className="mono dim">{t.families(families.length)}</span>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label={t.close}><Icon name="x" /></button>
         </header>
         <ul className="family-list">
           {families.map((f, i) => (
             <li key={f.id}>
-              <button type="button" className={`family-row ${f.id === currentFamily ? 'on' : ''}`} onClick={() => onPick(f.models[0].id)}>
+              <button type="button" className={`family-row ${f.id === currentFamily ? 'on' : ''}`} onClick={() => onPick(f.models[0].id)}
+                aria-current={f.id === currentFamily ? 'true' : undefined}>
                 <span className="mono dim">{String(i + 1).padStart(2, '0')}</span>
                 <span className="family-name">{f.name}</span>
                 <span className="family-desc">{f.description}</span>
-                <span className="mono dim">{f.models.length} modo{f.models.length > 1 ? 's' : ''}</span>
+                <span className="mono dim">{t.modesCount(f.models.length)}</span>
               </button>
             </li>
           ))}
@@ -59,9 +61,20 @@ function sumEstimates(list) {
   };
 }
 
+// Estado inicial: gana lo más reciente entre la última acción explícita del usuario
+// (reusar, animar, usar un prompt…) y el borrador guardado.
+function initialState(studio, seed) {
+  const saved = loadDraft(studio);
+  const draft = saved && (!seed.explicit || saved.savedAt > seed.at) ? saved : null;
+  const model = getModel(draft?.modelId) || getModel(seed.modelId);
+  return { modelId: model.id, values: carryValues(model, draft ? draft.values : seed.values), restored: Boolean(draft && hasContent(draft.values)) };
+}
+
 export default function Composer({ studio, seed, onModelChange }) {
-  const [modelId, setModelId] = useState(seed.modelId);
-  const [values, setValues] = useState(() => carryValues(getModel(seed.modelId), seed.values));
+  const [start] = useState(() => initialState(studio, seed));
+  const [modelId, setModelId] = useState(start.modelId);
+  const [values, setValues] = useState(start.values);
+  const [restored, setRestored] = useState(start.restored);
   const [busy, setBusy] = useState({});
   const [errors, setErrors] = useState([]);
   const [sheet, setSheet] = useState(false);
@@ -71,16 +84,26 @@ export default function Composer({ studio, seed, onModelChange }) {
   const [compareWith, setCompareWith] = useState([]);
   const [animate, setAnimate] = useState({ on: false, modelId: ANIMATE_DEFAULT, prompt: '' });
   const [estimates, setEstimates] = useState({ main: null, compare: {}, loading: false, error: false });
+  const panelRef = useRef(null);
+  const firstSeed = useRef(seed.nonce);
 
-  // Una "semilla" nueva (reutilizar, usar como entrada…) reinicia el formulario.
+  // Una «semilla» nueva (reutilizar, usar como entrada…) reinicia el formulario.
   useEffect(() => {
+    if (seed.nonce === firstSeed.current || !seed.explicit) return;
     setModelId(seed.modelId);
     setValues(carryValues(getModel(seed.modelId), seed.values));
     setErrors([]);
     setCompareWith([]);
+    setRestored(false);
     // Solo el nonce indica una semilla nueva; recordar el modelo no debe borrar el formulario.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seed.nonce]);
+
+  // Autoguardado del borrador (con retardo para no escribir en cada tecla).
+  useEffect(() => {
+    const timer = setTimeout(() => saveDraft(studio, modelId, values), 500);
+    return () => clearTimeout(timer);
+  }, [studio, modelId, values]);
 
   const model = getModel(modelId);
   const fields = useMemo(() => describeFields(model.schema), [model]);
@@ -96,13 +119,13 @@ export default function Composer({ studio, seed, onModelChange }) {
   const canAnimate = studio === 'image';
   const total = variations + chosen.length;
 
-  // Costo en vivo con el endpoint /estimate de Higgsfield (con retardo para no saturar).
+  // Costo en vivo con el endpoint de estimación del proveedor (con retardo para no saturar).
   const chosenKey = chosen.map((c) => c.model.id).join(',');
   useEffect(() => {
     if (!isValid) { setEstimates({ main: null, compare: {}, loading: false, error: false }); return undefined; }
     let alive = true;
     setEstimates((e) => ({ ...e, loading: true }));
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       const safe = (p) => p.catch(() => null);
       const [main, ...rest] = await Promise.all([
         safe(generation.estimate(model.endpoint, payload)),
@@ -112,7 +135,7 @@ export default function Composer({ studio, seed, onModelChange }) {
       const compare = Object.fromEntries(chosen.map((c, i) => [c.model.id, rest[i]]));
       setEstimates({ main, compare, loading: false, error: !main });
     }, 650);
-    return () => { alive = false; clearTimeout(t); };
+    return () => { alive = false; clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [model.endpoint, payloadKey, isValid, chosenKey]);
 
@@ -137,13 +160,30 @@ export default function Composer({ studio, seed, onModelChange }) {
     onModelChange?.(id);
   }
 
+  function startOver() {
+    clearDraft(studio);
+    setValues(carryValues(model, {}));
+    setRestored(false);
+    setErrors([]);
+  }
+
   // Aplica un prompt de la biblioteca (con sus parámetros y tomas si el modelo los admite).
   function usePrompt(entry) {
     setValues((prev) => applyPromptEntry(model, prev, entry));
     setErrors([]);
     setLibrary(false);
+    toast(COPY.prompts.applied, { tone: 'success', duration: 2500 });
   }
   const tips = MODEL_TIPS[model.familyId] || GENERAL_TIPS[studio] || [];
+
+  // Tras un intento fallido, el foco va al primer campo con error.
+  function focusFirstError() {
+    requestAnimationFrame(() => {
+      const target = panelRef.current?.querySelector('.has-error input, .has-error textarea, .has-error select, .has-error button, .form-errors');
+      target?.focus?.();
+      target?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    });
+  }
 
   function generate() {
     if (uploading) return;
@@ -153,11 +193,11 @@ export default function Composer({ studio, seed, onModelChange }) {
       const target = getModel(animate.modelId);
       const test = chainedPayload(target, { prompt: animate.prompt }, 'https://example.com/x.png');
       const chainProblems = validatePayload(target.schema, test);
-      if (chainProblems.length) problems.push({ key: '_animate', message: `Animación: ${chainProblems[0].message}` });
+      if (chainProblems.length) problems.push({ key: '_animate', message: t.animateError(chainProblems[0].message) });
       then = { modelId: target.id, values: { prompt: animate.prompt }, inputKey: 'image_url' };
     }
     setErrors(problems);
-    if (problems.length) return;
+    if (problems.length) { focusFirstError(); return; }
 
     const group = total > 1 ? newGroup() : null;
     variationPayloads(model, payload, variations).forEach((p, i) => {
@@ -167,7 +207,9 @@ export default function Composer({ studio, seed, onModelChange }) {
       const id = enqueue({ model: c.model, payload: c.payload, estimate: estimates.compare[c.model.id], group, label: 'Comparación' });
       if (!estimates.compare[c.model.id]) generation.estimate(c.model.endpoint, c.payload).then((e) => setEstimate(id, e)).catch(() => {});
     }
+    setRestored(false);
     setFlash(true);
+    toast(COPY.toasts.sent(total), { tone: 'success', duration: 3000 });
     setTimeout(() => setFlash(false), 900);
   }
 
@@ -204,17 +246,20 @@ export default function Composer({ studio, seed, onModelChange }) {
     return (
       <div key={f.key} className={`field-wrap ${err ? 'has-error' : ''}`}>
         {control}
-        {err && <p className="field-error">{err}</p>}
+        {err && <p className="field-error" role="alert">{err}</p>}
       </div>
     );
   }
 
   const looseErrors = errors.filter((e) => !fields.all.some((f) => f.key === e.key && visible(f)));
+  const cost = !isValid ? t.cost.incomplete : estimates.loading ? t.cost.loading
+    : totalCost ? t.cost.value(totalCost.credits.toFixed(totalCost.credits < 10 ? 2 : 1), totalCost.usd.toFixed(2), totalCost.partial)
+      : t.cost.unavailable;
 
   return (
-    <section className="composer panel" aria-label="Compositor">
+    <section ref={panelRef} className="composer panel" aria-label={t.label}>
       {family?.models.length > 1 && (
-        <nav className="panel-tabs" role="tablist" aria-label="Modo">
+        <nav className="panel-tabs" role="tablist" aria-label={t.modes}>
           {family.models.map((m) => (
             <button type="button" role="tab" key={m.id} aria-selected={m.id === modelId}
               className={m.id === modelId ? 'on' : ''} onClick={() => switchModel(m.id)}>
@@ -225,24 +270,32 @@ export default function Composer({ studio, seed, onModelChange }) {
       )}
 
       <div className="panel-scroll">
+        {restored && (
+          <div className="draft-note" role="status">
+            <Icon name="history" size={16} />
+            <span>{t.draftRestored}</span>
+            <button type="button" className="link-btn" onClick={startOver}>{t.clearDraft}</button>
+          </div>
+        )}
+
         {fields.media.length > 0 && <div className="media-block">{fields.media.map(render)}</div>}
 
         {fields.prompt && (
           <div className="prompt-wrap">
-            <button type="button" className="inspire" onClick={() => setLibrary(true)}><Icon name="sparkles" size={14} /> Biblioteca</button>
+            <button type="button" className="inspire" onClick={() => setLibrary(true)}><Icon name="sparkles" size={14} /> {t.library}</button>
             {render(fields.prompt)}
           </div>
         )}
         {fields.prompt && tips.length > 0 && (
           <details className="tips">
             <summary><Icon name="bulb" size={15} /> {tips[0]}</summary>
-            {tips.length > 1 && <ul>{tips.slice(1).map((t) => <li key={t}>{t}</li>)}</ul>}
+            {tips.length > 1 && <ul>{tips.slice(1).map((tip) => <li key={tip}>{tip}</li>)}</ul>}
           </details>
         )}
 
-        <button type="button" className="row-card model-row" onClick={() => setSheet(true)}>
+        <button type="button" className="row-card model-row" onClick={() => setSheet(true)} aria-haspopup="dialog">
           <span className="row-text">
-            <span className="row-label">Modelo</span>
+            <span className="row-label">{t.model}</span>
             <b>{model.family}</b>
           </span>
           <span className="row-chevron" aria-hidden>›</span>
@@ -251,17 +304,17 @@ export default function Composer({ studio, seed, onModelChange }) {
         <div className="primary-grid">{fields.primary.filter(visible).map(render)}</div>
 
         <div className="row-card stepper-row">
-          <span className="row-label-inline">Cantidad</span>
-          <div className="stepper" role="group" aria-label="Variaciones">
-            <button type="button" onClick={() => setVariations((v) => Math.max(1, v - 1))} disabled={variations <= 1} aria-label="Menos">−</button>
-            <span className="mono">{variations}/4</span>
-            <button type="button" onClick={() => setVariations((v) => Math.min(4, v + 1))} disabled={variations >= 4} aria-label="Más">+</button>
+          <span className="row-label-inline" id="qty-label">{t.quantity}</span>
+          <div className="stepper" role="group" aria-labelledby="qty-label">
+            <button type="button" onClick={() => setVariations((v) => Math.max(1, v - 1))} disabled={variations <= 1} aria-label={t.less}>−</button>
+            <span className="mono" aria-live="polite">{variations}/4</span>
+            <button type="button" onClick={() => setVariations((v) => Math.min(4, v + 1))} disabled={variations >= 4} aria-label={t.more}>+</button>
           </div>
         </div>
 
         <details className="row-card advanced" open={compareWith.length > 0 || animate.on || undefined}>
           <summary>
-            <span className="adv-title"><Icon name="sliders" size={16} /> Configuración avanzada</span>
+            <span className="adv-title"><Icon name="sliders" size={16} /> {t.advanced}</span>
             <span className="row-chevron" aria-hidden>›</span>
           </summary>
           <div className="advanced-body">
@@ -270,15 +323,15 @@ export default function Composer({ studio, seed, onModelChange }) {
             {canAnimate && (
               <div className={`power ${animate.on ? 'on' : ''}`}>
                 <label className="power-head">
-                  <span><b>Animar al terminar</b><em>La imagen se convierte en video automáticamente.</em></span>
+                  <span><b>{t.animate[0]}</b><em>{t.animate[1]}</em></span>
                   <input type="checkbox" className="toggle" checked={animate.on} onChange={(e) => setAnimate((a) => ({ ...a, on: e.target.checked }))} />
                 </label>
                 {animate.on && (
                   <div className="power-body">
-                    <select value={animate.modelId} onChange={(e) => setAnimate((a) => ({ ...a, modelId: e.target.value }))} aria-label="Modelo de video">
+                    <select value={animate.modelId} onChange={(e) => setAnimate((a) => ({ ...a, modelId: e.target.value }))} aria-label={t.animateModel}>
                       {targets.map((m) => <option key={m.id} value={m.id}>{m.family} · {workflowLabel(m.workflow)}</option>)}
                     </select>
-                    <textarea rows={2} value={animate.prompt} placeholder="Movimiento: la cámara orbita lentamente, el pelo se mueve con el viento…"
+                    <textarea rows={2} value={animate.prompt} placeholder={t.animatePlaceholder} aria-label={t.animate[0]}
                       onChange={(e) => setAnimate((a) => ({ ...a, prompt: e.target.value }))} />
                   </div>
                 )}
@@ -287,12 +340,12 @@ export default function Composer({ studio, seed, onModelChange }) {
 
             {candidates.length > 0 && (
               <div className="compare">
-                <div className="field-label"><span>Comparar con otros modelos</span><span className="mono dim">{compareWith.length ? `${chosen.length}/3` : `${candidates.length} compatibles`}</span></div>
+                <div className="field-label"><span>{t.compare}</span><span className="mono dim">{t.compareCount(compareWith.length ? chosen.length : 0, candidates.length)}</span></div>
                 <div className="chips">
                   {candidates.map(({ model: m }) => {
                     const on = compareWith.includes(m.familyId);
                     return (
-                      <button type="button" key={m.familyId} className={`chip ${on ? 'on' : ''}`}
+                      <button type="button" key={m.familyId} className={`chip ${on ? 'on' : ''}`} aria-pressed={on}
                         disabled={!on && compareWith.length >= 3}
                         onClick={() => setCompareWith((list) => (on ? list.filter((x) => x !== m.familyId) : [...list, m.familyId]))}>
                         {m.family}
@@ -305,7 +358,7 @@ export default function Composer({ studio, seed, onModelChange }) {
 
             {model.notes.length > 0 && (
               <div className="notes">
-                <div className="field-label"><span>Notas del modelo</span><a className="mono" href={model.docs} target="_blank" rel="noreferrer">docs ↗</a></div>
+                <div className="field-label"><span>{t.notes}</span><a className="mono" href={model.docs} target="_blank" rel="noreferrer">{t.docs}</a></div>
                 <ul>{model.notes.map((n) => <li key={n}>{n}</li>)}</ul>
               </div>
             )}
@@ -313,18 +366,14 @@ export default function Composer({ studio, seed, onModelChange }) {
         </details>
 
         {looseErrors.length > 0 && (
-          <ul className="form-errors">{looseErrors.map((e) => <li key={e.message}>{e.message}</li>)}</ul>
+          <ul className="form-errors" role="alert" tabIndex={-1}>{looseErrors.map((e) => <li key={e.message}>{e.message}</li>)}</ul>
         )}
       </div>
 
       <footer className="panel-foot">
-        <span className="cost mono" title="Estimación de Higgsfield antes de generar">
-          {!isValid ? 'Completa los campos obligatorios' : estimates.loading ? 'Calculando costo…'
-            : totalCost ? `≈ ${totalCost.credits.toFixed(totalCost.credits < 10 ? 2 : 1)} créditos · $${totalCost.usd.toFixed(2)}${totalCost.partial ? '+' : ''}`
-              : 'Costo no disponible'}
-        </span>
-        <button type="button" className={`generate ${flash ? 'flash' : ''}`} onClick={generate} disabled={uploading}>
-          {uploading ? 'Subiendo…' : flash ? '¡Enviado!' : total > 1 ? `Generar ${total}` : 'Generar'}
+        <span className="cost mono" title={t.cost.hint} aria-live="polite">{cost}</span>
+        <button type="button" className={`generate ${flash ? 'flash' : ''}`} onClick={generate} disabled={uploading} aria-busy={uploading}>
+          {uploading ? t.uploading : flash ? t.sent : total > 1 ? t.generateN(total) : t.generate}
         </button>
       </footer>
 
