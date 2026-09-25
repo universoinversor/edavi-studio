@@ -1,7 +1,7 @@
 // Solo para el modo demo (HF_MOCK=1): sirve archivos subidos e imágenes simuladas.
 import { NextResponse } from 'next/server';
-import { isMock } from '@/lib/server/hf';
-import { mockFiles } from '@/lib/server/mock';
+import { isMock } from '@/lib/server/providers';
+import { mockFiles } from '@/lib/server/providers';
 
 export const dynamic = 'force-dynamic';
 

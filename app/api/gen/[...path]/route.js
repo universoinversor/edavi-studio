@@ -1,17 +1,18 @@
-// Proxy seguro hacia https://api.higgsfield.ai.
-// El navegador nunca ve las credenciales del servidor y solo se permiten rutas conocidas.
+// Proxy seguro hacia el proveedor de generación (adaptadores en lib/server/providers).
+// El navegador nunca ve las credenciales y solo se permiten rutas conocidas.
 import { NextResponse } from 'next/server';
-import { forward, isAllowed, isGenerationPath, isMock, resolveAuth, rewriteUrls } from '@/lib/server/hf';
-import { mockRequest } from '@/lib/server/mock';
+import { generationProvider } from '@/lib/server/providers';
+import { resolveAuth } from '@/lib/server/access';
 
 export const dynamic = 'force-dynamic';
 
 const GET_QUERY_KEYS = ['search', 'size', 'cursor'];
 
 async function handle(request, { params }, method) {
+  const provider = generationProvider();
   const { path: segments = [] } = await params;
   const path = segments.map(decodeURIComponent).join('/');
-  if (!isAllowed(method, path)) {
+  if (!provider.isAllowed(method, path)) {
     return NextResponse.json({ detail: 'Ruta no permitida por el proxy.' }, { status: 404 });
   }
 
@@ -25,13 +26,12 @@ async function handle(request, { params }, method) {
     }
   }
 
-  if (isMock()) {
-    const { status, data } = mockRequest(method, path, body, new URL(request.url).origin);
-    return status === 202 ? new NextResponse(null, { status }) : NextResponse.json(data, { status });
+  let credentials;
+  if (provider.needsAuth) {
+    const auth = await resolveAuth(request);
+    if (auth.error) return NextResponse.json({ detail: auth.error, code: auth.code }, { status: auth.status });
+    credentials = auth.credentials;
   }
-
-  const auth = await resolveAuth(request);
-  if (auth.error) return NextResponse.json({ detail: auth.error, code: auth.code }, { status: auth.status });
 
   // Solo las consultas de listados aceptan parámetros; nada de webhooks arbitrarios.
   let search = '';
@@ -43,17 +43,12 @@ async function handle(request, { params }, method) {
   }
 
   try {
-    const result = await forward({
-      method, path, search, authorization: auth.authorization,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      contentType: body !== undefined ? 'application/json' : undefined,
-    });
+    const result = await provider.request({ method, path, search, body, credentials, origin: new URL(request.url).origin });
     const headers = result.correlationId ? { 'x-correlation-id': result.correlationId } : undefined;
     if (result.status === 202 || result.data === null) return new NextResponse(null, { status: result.status, headers });
-    const data = isGenerationPath(path) || path.startsWith('requests/') ? rewriteUrls(result.data) : result.data;
-    return NextResponse.json(data, { status: result.status, headers });
+    return NextResponse.json(result.data, { status: result.status, headers });
   } catch (err) {
-    return NextResponse.json({ detail: `No se pudo contactar con Higgsfield: ${err.message}` }, { status: 502 });
+    return NextResponse.json({ detail: `No se pudo contactar con el proveedor: ${err.message}` }, { status: 502 });
   }
 }
 

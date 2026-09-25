@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { enumLabel } from '@/lib/schema';
-import { listPresets, listSoulStyles, uploadFile } from '@/lib/client';
+import { generation } from '@/lib/providers';
 import { friendlyError } from '@/lib/errors';
 import { useCharacters } from '@/lib/characters';
 import Icon from './Icon';
@@ -239,7 +239,7 @@ function useUploader(onDone) {
   async function run(file) {
     setState({ progress: 0, name: file.name });
     try {
-      const url = await uploadFile(file, (p) => setState({ progress: p, name: file.name }));
+      const url = await generation.upload(file, (p) => setState({ progress: p, name: file.name }));
       setState(null);
       onDone(url);
     } catch (err) {
@@ -345,7 +345,7 @@ export function MediaListField({ field, value, onChange, onBusy }) {
     setBusy((b) => b + chosen.length);
     await Promise.all(chosen.map(async (f) => {
       try {
-        const u = await uploadFile(f);
+        const u = await generation.upload(f);
         // Actualización funcional: varias subidas en paralelo no se pisan.
         onChange((prev) => [...(prev || []), u].slice(0, max));
       } catch (err) {
@@ -396,7 +396,7 @@ export function StyleField({ field, value, onChange, version }) {
   useEffect(() => {
     if (styleCache[version]) { setStyles(styleCache[version]); return; }
     let alive = true;
-    listSoulStyles(version)
+    generation.listStyles(version)
       .then((list) => { styleCache[version] = list; if (alive) setStyles(list); })
       .catch((err) => alive && setError(friendlyError(err)));
     return () => { alive = false; };
@@ -432,7 +432,7 @@ export function PresetField({ field, value, onChange }) {
   useEffect(() => {
     let alive = true;
     const t = setTimeout(() => {
-      listPresets(search.trim() || undefined)
+      generation.listPresets(search.trim() || undefined)
         .then((r) => alive && setItems(r.items || []))
         .catch((err) => alive && setError(friendlyError(err)));
     }, 250);

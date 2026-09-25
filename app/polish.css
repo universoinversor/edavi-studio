@@ -15,7 +15,7 @@ body { touch-action: manipulation; }
   position: fixed;
   left: 12px;
   top: -60px;
-  z-index: 200;
+  z-index: var(--z-skip);
   padding: 10px 16px;
   border-radius: 12px;
   background: var(--accent);

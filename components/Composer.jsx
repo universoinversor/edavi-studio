@@ -6,7 +6,7 @@ import { animateTargets, applyPromptEntry, carryValues, chainedPayload, compareC
 import { GENERAL_TIPS, MODEL_TIPS } from '@/lib/prompt-bank';
 import PromptLibrary from './PromptLibrary';
 import { enqueue, setEstimate } from '@/lib/jobs';
-import { estimateCost } from '@/lib/client';
+import { generation } from '@/lib/providers';
 import {
   ColorField, ColorsField, EnumField, MediaField, MediaListField, NumberField, PresetField, PromptField,
   RangeField, ReferenceField, SeedField, ShotsField, StringField, StyleField, TagsField, ToggleField,
@@ -105,8 +105,8 @@ export default function Composer({ studio, seed, onModelChange }) {
     const t = setTimeout(async () => {
       const safe = (p) => p.catch(() => null);
       const [main, ...rest] = await Promise.all([
-        safe(estimateCost(model.endpoint, payload)),
-        ...chosen.map((c) => safe(estimateCost(c.model.endpoint, c.payload))),
+        safe(generation.estimate(model.endpoint, payload)),
+        ...chosen.map((c) => safe(generation.estimate(c.model.endpoint, c.payload))),
       ]);
       if (!alive) return;
       const compare = Object.fromEntries(chosen.map((c, i) => [c.model.id, rest[i]]));
@@ -165,7 +165,7 @@ export default function Composer({ studio, seed, onModelChange }) {
     });
     for (const c of chosen) {
       const id = enqueue({ model: c.model, payload: c.payload, estimate: estimates.compare[c.model.id], group, label: 'Comparación' });
-      if (!estimates.compare[c.model.id]) estimateCost(c.model.endpoint, c.payload).then((e) => setEstimate(id, e)).catch(() => {});
+      if (!estimates.compare[c.model.id]) generation.estimate(c.model.endpoint, c.payload).then((e) => setEstimate(id, e)).catch(() => {});
     }
     setFlash(true);
     setTimeout(() => setFlash(false), 900);

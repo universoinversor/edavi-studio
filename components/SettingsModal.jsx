@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { loadSettings, saveSettings } from '@/lib/client';
+import { loadSettings, saveSettings } from '@/lib/api';
 
 export default function SettingsModal({ health, reason, onClose }) {
   const [credentials, setCredentials] = useState('');

@@ -1,0 +1,63 @@
+/* =====================================================================
+   TOKENS DEL DESIGN SYSTEM — escalas compartidas por toda la app.
+   Los colores por tema viven en glass.css (oscuro) y theme.css (claro);
+   aquí van las escalas que no cambian con el tema.
+   Documentación: docs/DESIGN-SYSTEM.md
+   ===================================================================== */
+
+:root {
+  /* Espaciado (múltiplos de 4) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Radios */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 26px;
+  --r-2xl: 32px;
+  --r-pill: 999px;
+
+  /* Tipografía (escala 12 · 14 · 16 · 20 · 24 · 32 · 48 · 72) */
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-md: 16px;
+  --fs-lg: 20px;
+  --fs-xl: 24px;
+  --fs-2xl: 32px;
+  --fs-3xl: 48px;
+  --fs-4xl: 72px;
+  --lh-tight: 1.05;
+  --lh-body: 1.55;
+
+  /* Capas */
+  --z-base: 1;
+  --z-topbar: 30;
+  --z-nav: 40;
+  --z-sheet: 50;
+  --z-lightbox: 60;
+  --z-toast: 70;
+  --z-skip: 200;
+
+  /* Movimiento */
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Tamaños táctiles */
+  --touch-min: 44px;
+
+  /* Estados semánticos */
+  --success: var(--ok);
+  --warning: #f5b84a;
+}

@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { STUDIOS, defaultModelFor, familiesForStudio, getModel } from '@/lib/catalog';
-import { getHealth, loadSettings } from '@/lib/client';
+import { getHealth, loadSettings } from '@/lib/api';
 import { useJobs } from '@/lib/jobs';
 import { TERMINAL } from '@/lib/schema';
 import { BRAND } from '@/lib/brand';
