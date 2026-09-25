@@ -36,6 +36,9 @@ Creado por **EDAVI**. Código abierto, en español, listo para conectar tu clave
 - **🔁 Cola resistente:** sigue cada trabajo con backoff, se reanuda si recargas y, si llegas al límite de concurrencia, reenvía cuando hay hueco.
 - **📤 Subidas fáciles:** arrastra archivos; las imágenes en formatos no admitidos se convierten solas a PNG.
 - **🔒 Seguro:** tus claves viven en el servidor, el proxy solo permite rutas conocidas y puedes protegerlo con contraseña.
+- **🌗 Tema claro y oscuro:** oscuro morado con cristal, o claro marfil con dorado metálico. Se recuerda en cada navegador.
+- **🤖 Avatar EDAVI:** la mascota de la marca en la portada, en el inicio de sesión y en los estados vacíos (`public/edavi-avatar.png`).
+- **📱 Móvil tipo app:** barra de navegación inferior con iconos.
 - **🧪 Modo demo:** prueba toda la interfaz sin gastar créditos.
 
 ## Empezar en 3 pasos
@@ -88,7 +91,8 @@ npm test               # comprueba que todo sigue funcionando
 ## Personalizar la marca
 
 - Nombre, autor y enlace: `lib/brand.js`
-- Color morado y estilo: variables `--accent` al inicio de `app/globals.css`
+- Colores: tema oscuro en `app/glass.css` y tema claro (blanco + dorado) en `app/theme.css`
+- Avatar: reemplaza `public/edavi-avatar.png` (PNG transparente, cuadrado, 1024 px recomendado)
 - Icono: `public/icon.svg`
 - Banners y modelos destacados: `components/Explore.jsx` y `FEATURED` en `lib/catalog.js`
 - Prompts de video y transformación, y consejos por modelo: `lib/prompt-bank.js`

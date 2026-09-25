@@ -209,7 +209,7 @@ export default function Gallery({ studio, onReuse, onUseAsInput }) {
         <HowItWorks studio={studio} />
       ) : shown.length === 0 ? (
         <div className="empty">
-          <div className="empty-frame" aria-hidden><span /><span /><span /></div>
+          <img className="empty-avatar" src="/edavi-avatar.png" alt="" width="120" height="120" />
           <p className="empty-title">Aún no hay nada aquí</p>
           <p className="dim">{query ? 'Nada coincide con tu búsqueda.' : 'Escribe un prompt y pulsa Generar. Tus resultados aparecerán aquí.'}</p>
         </div>

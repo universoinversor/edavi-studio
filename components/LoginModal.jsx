@@ -32,6 +32,7 @@ export default function LoginModal({ reason, onClose }) {
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <form className="sheet settings login" role="dialog" aria-label="Iniciar sesión" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
+        <img className="login-avatar" src="/edavi-avatar.png" alt="" width="96" height="96" />
         <header className="sheet-head">
           <h2>Entrar</h2>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Cerrar">×</button>

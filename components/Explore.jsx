@@ -2,7 +2,6 @@
 import { useMemo, useState } from 'react';
 import { familiesForStudio, FEATURED } from '@/lib/catalog';
 import { useJobs, withArchive } from '@/lib/jobs';
-import { BRAND } from '@/lib/brand';
 
 const KIND = { image: 'Imagen', video: 'Video', transform: 'Transformar' };
 
@@ -27,7 +26,7 @@ function ModelTile({ family, studio, badge, onOpen }) {
     <button type="button" className="tile" onClick={() => onOpen(studio, family.models[0].id)}>
       <span className="tile-top">
         <span className="tile-icon"><Glyph kind={studio} /></span>
-        <span className="tile-kind"><Glyph kind={studio} />{KIND[studio]}</span>
+        <span className="tile-kind">{KIND[studio]}</span>
       </span>
       <span className="tile-name">
         {family.name}
@@ -65,6 +64,7 @@ const BANNERS = [
 export default function Explore({ onOpen }) {
   const jobs = useJobs();
   const [filter, setFilter] = useState('all');
+  const [showAll, setShowAll] = useState(false);
 
   const groups = useMemo(() => ['image', 'video', 'transform'].map((studio) => ({ studio, families: familiesForStudio(studio) })), []);
   const featured = useMemo(() => FEATURED.map((f) => {
@@ -75,8 +75,46 @@ export default function Explore({ onOpen }) {
     .flatMap((j) => j.outputs.filter((o) => o.type !== 'audio').map((o) => ({ ...o, job: j }))).slice(0, 24), [jobs]);
   const total = groups.reduce((n, g) => n + g.families.reduce((m, f) => m + f.models.length, 0), 0);
 
+  const catalog = groups.filter((g) => filter === 'all' || g.studio === filter).flatMap((g) => g.families.map((family) => ({ g, family })));
+  const PROMPT_COUNT = '1.526';
+
   return (
     <div className="explore">
+      <section className="hero" aria-label="EDAVI Studio">
+        <div className="hero-copy">
+          <span className="eyebrow"><i aria-hidden /> Estudio creativo con IA · Higgsfield</span>
+          <h1>
+            <span className="hero-line dim-line">Imagina cualquier cosa.</span>
+            <span className="hero-line shine">Créala en segundos.</span>
+            <span className="hero-line">Imagen y video de cine.</span>
+          </h1>
+          <p className="hero-sub">
+            {total} modelos de IA en un solo estudio: SOUL, Seedance, Kling, Wan, MiniMax y más.
+            Con biblioteca de prompts, comparación de modelos, flujos automáticos y tu propio avatar.
+          </p>
+          <div className="hero-ctas">
+            <button type="button" className="cta" onClick={() => onOpen('image')}>✦ Empezar a crear</button>
+            <button type="button" className="pill-btn hero-ghost" onClick={() => onOpen('prompts')}>Ver {PROMPT_COUNT} prompts ›</button>
+          </div>
+          <dl className="hero-stats">
+            <div><dt>{total}</dt><dd>Modelos</dd></div>
+            <div><dt>{PROMPT_COUNT}</dt><dd>Prompts</dd></div>
+            <div><dt>4K</dt><dd>Video</dd></div>
+            <div><dt>×4</dt><dd>Variaciones</dd></div>
+          </dl>
+        </div>
+        <div className="hero-visual" aria-hidden>
+          <span className="orbit orbit-1" />
+          <span className="orbit orbit-2" />
+          <span className="orbit orbit-3" />
+          <span className="hero-halo" />
+          <img className="hero-avatar" src="/edavi-avatar.png" alt="" width="320" height="320" />
+          <span className="float-chip chip-a">🎬 Seedance 2.5</span>
+          <span className="float-chip chip-b">📸 SOUL V2</span>
+          <span className="float-chip chip-c">🎥 Kling 3.0</span>
+        </div>
+      </section>
+
       <section className="banners" aria-label="Destacados">
         {BANNERS.map((b) => (
           <button type="button" key={b.title} className="banner" onClick={() => onOpen(b.studio, b.model)}>
@@ -92,18 +130,12 @@ export default function Explore({ onOpen }) {
         ))}
       </section>
 
-      <section className="bento">
-        <div className="hero-card">
-          <div className="hero-glow" aria-hidden />
-          <h2>Crea sin límites<br /><span>con {BRAND.name}</span></h2>
-          <ul>
-            <li>{total} modelos de Higgsfield en un solo lugar</li>
-            <li>Imagen, video, motion control y Soul ID</li>
-            <li>Tus claves, tus créditos, tu marca</li>
-          </ul>
-          <button type="button" className="cta" onClick={() => onOpen('image')}>Empezar a crear</button>
-        </div>
-        <div className="tiles">
+      <section className="featured">
+        <header className="section-head">
+          <h2>Destacados</h2>
+          <p className="dim">Los modelos más potentes para empezar.</p>
+        </header>
+        <div className="tiles tiles-featured">
           {featured.map((f) => <ModelTile key={f.family.id} family={f.family} studio={f.studio} badge={f.badge} onOpen={onOpen} />)}
         </div>
       </section>
@@ -118,11 +150,18 @@ export default function Explore({ onOpen }) {
           </div>
         </header>
         <div className="tiles tiles-wide">
-          {groups.filter((g) => filter === 'all' || g.studio === filter).flatMap((g) => g.families.map((family) => (
+          {(showAll ? catalog : catalog.slice(0, 12)).map(({ g, family }) => (
             <ModelTile key={`${g.studio}-${family.id}`} family={family} studio={g.studio}
               badge={FEATURED.find((f) => f.family === family.id)?.badge} onOpen={onOpen} />
-          )))}
+          ))}
         </div>
+        {catalog.length > 12 && (
+          <div className="plib-more">
+            <button type="button" className="pill-btn" onClick={() => setShowAll((v) => !v)}>
+              {showAll ? 'Ver menos' : `Ver los ${catalog.length} modelos`}
+            </button>
+          </div>
+        )}
       </section>
 
       <section className="creations">
