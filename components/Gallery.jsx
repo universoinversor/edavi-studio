@@ -175,29 +175,43 @@ export default function Gallery({ studio, onReuse, onUseAsInput }) {
   const now = useNow(active);
   const running = jobs.filter((j) => !TERMINAL.has(j.status) && j.status !== 'error').length;
 
+  const [view, setView] = useState(null);
+  // Sin historial se muestra «Cómo funciona»; con historial, los resultados.
+  const tab = view || (jobs.some((j) => j.studio === studio) ? 'history' : 'how');
+
   return (
-    <section className="gallery" aria-label="Resultados">
+    <section className="gallery stage-main" aria-label="Resultados">
       <header className="gallery-head">
-        <h2>Mis generaciones</h2>
-        <span className="mono dim">{running ? `${running} en proceso` : `${shown.length} ${shown.length === 1 ? "resultado" : "resultados"}`}</span>
-        <div className="gallery-tools">
-          <div className="seg">
-            <button type="button" className={scope === 'studio' ? 'on' : ''} onClick={() => setScope('studio')}>Este estudio</button>
-            <button type="button" className={scope === 'all' ? 'on' : ''} onClick={() => setScope('all')}>Todo</button>
-            <button type="button" className={scope === 'fav' ? 'on' : ''} onClick={() => setScope('fav')}>★ Favoritos</button>
+        <nav className="view-tabs" role="tablist">
+          <button type="button" role="tab" aria-selected={tab === 'history'} className={tab === 'history' ? 'on' : ''} onClick={() => setView('history')}>
+            <span aria-hidden>▤</span> Historial{running ? <i className="dot">{running}</i> : null}
+          </button>
+          <button type="button" role="tab" aria-selected={tab === 'how'} className={tab === 'how' ? 'on' : ''} onClick={() => setView('how')}>
+            <span aria-hidden>◈</span> Cómo funciona
+          </button>
+        </nav>
+        {tab === 'history' && (
+          <div className="gallery-tools">
+            {jobs.length > 3 && <input type="search" className="gallery-search" placeholder="Buscar…" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar en el historial" />}
+            <div className="seg" aria-label="Filtros">
+              <button type="button" className={scope === 'studio' ? 'on' : ''} onClick={() => setScope('studio')}>Este estudio</button>
+              <button type="button" className={scope === 'all' ? 'on' : ''} onClick={() => setScope('all')}>Todo</button>
+              <button type="button" className={scope === 'fav' ? 'on' : ''} onClick={() => setScope('fav')}>★</button>
+            </div>
+            {jobs.some((j) => TERMINAL.has(j.status) || j.status === 'error') && (
+              <button type="button" className="pill-btn" onClick={() => window.confirm('¿Quitar del historial los resultados terminados? Los favoritos se conservan.') && clearFinished()}>Limpiar</button>
+            )}
           </div>
-          {jobs.length > 3 && <input type="search" className="gallery-search" placeholder="Buscar…" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar en el historial" />}
-          {jobs.some((j) => TERMINAL.has(j.status) || j.status === 'error') && (
-            <button type="button" className="link-btn mono" onClick={() => window.confirm('¿Quitar del historial los resultados terminados? Los favoritos se conservan.') && clearFinished()}>limpiar</button>
-          )}
-        </div>
+        )}
       </header>
 
-      {shown.length === 0 ? (
+      {tab === 'how' ? (
+        <HowItWorks studio={studio} />
+      ) : shown.length === 0 ? (
         <div className="empty">
           <div className="empty-frame" aria-hidden><span /><span /><span /></div>
           <p className="empty-title">Aún no hay nada aquí</p>
-          <p className="dim">Escribe un prompt y pulsa <b>Generar</b>. Tus resultados aparecerán aquí y se guardan en este navegador.</p>
+          <p className="dim">{query ? 'Nada coincide con tu búsqueda.' : 'Escribe un prompt y pulsa Generar. Tus resultados aparecerán aquí.'}</p>
         </div>
       ) : (
         <div className="contact-sheet">
@@ -209,5 +223,55 @@ export default function Gallery({ studio, onReuse, onUseAsInput }) {
       )}
       {open && <Portal><Lightbox job={open.job} index={open.index} onClose={() => setOpen(null)} /></Portal>}
     </section>
+  );
+}
+
+const HOW = {
+  image: {
+    title: 'Convierte ideas en imágenes',
+    sub: 'Retratos, producto y carteles con los mejores modelos de imagen.',
+    steps: [
+      ['Elige un modelo', 'SOUL para retratos y moda, Recraft para gráficos, Marketing Studio para producto.', 'how-a'],
+      ['Describe o sube referencias', 'Escribe tu idea o sube imágenes para editarlas y combinarlas.', 'how-b'],
+      ['Genera y compara', 'Hasta 4 variaciones y el mismo prompt en varios modelos a la vez.', 'how-c'],
+    ],
+  },
+  video: {
+    title: 'Convierte texto en video',
+    sub: 'Clips cinematográficos con audio nativo, listos para tus proyectos.',
+    steps: [
+      ['Escribe o anima', 'Parte de un prompt, de una imagen o de varias referencias.', 'how-b'],
+      ['Dirige la toma', 'Formato, duración, resolución, cámara y audio, según el modelo.', 'how-c'],
+      ['Genera y guarda', 'Mira el costo antes de generar y guarda los mejores en tu nube.', 'how-a'],
+    ],
+  },
+  transform: {
+    title: 'Transforma cualquier video',
+    sub: 'Edita, extiende o copia el movimiento de un video a tu imagen.',
+    steps: [
+      ['Sube tu video', 'MP4 de al menos 4 segundos para transferir movimiento.', 'how-c'],
+      ['Añade el cambio', 'Una imagen de personaje, un objeto nuevo o un prompt de edición.', 'how-a'],
+      ['Genera', 'El movimiento original se conserva con el nuevo aspecto.', 'how-b'],
+    ],
+  },
+};
+
+function HowItWorks({ studio }) {
+  const how = HOW[studio] || HOW.image;
+  return (
+    <div className="how">
+      <h2>{how.title}</h2>
+      <p className="how-sub">{how.sub}</p>
+      <div className="how-steps">
+        {how.steps.map(([title, text, art], i) => (
+          <article key={title} className="how-card">
+            <span className="how-n mono">{String(i + 1).padStart(2, '0')}</span>
+            <h3>{title}</h3>
+            <p>{text}</p>
+            <div className={`how-art ${art}`} aria-hidden />
+          </article>
+        ))}
+      </div>
+    </div>
   );
 }

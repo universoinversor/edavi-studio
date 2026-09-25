@@ -1,0 +1,236 @@
+/* =====================================================================
+   DISTRIBUCIÓN DE HERRAMIENTA — panel fijo a la izquierda con tarjetas
+   (subir, prompt, modelo, cantidad, avanzado) y botón Generar abajo;
+   zona de resultados a la derecha con Historial / Cómo funciona.
+   ===================================================================== */
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.stage-image, .stage-video, .stage-transform, .stage-characters { max-width: none; padding: 14px 16px 16px; }
+.workspace, .characters { grid-template-columns: 380px minmax(0, 1fr); gap: 16px; align-items: start; }
+
+/* ---------- Panel izquierdo ---------- */
+
+.panel {
+  position: sticky;
+  top: 88px;
+  height: calc(100vh - 104px);
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.panel-tabs {
+  display: flex;
+  gap: 20px;
+  padding: 14px 18px 0;
+  overflow-x: auto;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  scrollbar-width: none;
+  flex: none;
+}
+.panel-tabs::-webkit-scrollbar { display: none; }
+.panel-tabs button {
+  padding: 6px 0 12px;
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 13.5px;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.panel-tabs button:hover { color: var(--text); }
+.panel-tabs button.on { color: #fff; border-color: var(--accent-hi); }
+
+.panel-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+
+.panel-foot {
+  flex: none;
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.22), transparent);
+}
+.panel-foot .cost { text-align: center; font-size: 11.5px; }
+.panel-foot .generate { width: 100%; padding: 16px; font-size: 16px; font-weight: 700; border-radius: 16px; }
+
+/* ---------- Tarjetas del panel ---------- */
+
+.panel .field-wrap, .row-card {
+  border: 0;
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.panel .field-wrap:focus-within { box-shadow: inset 0 0 0 1px rgba(185, 140, 255, 0.55); }
+.panel .field-wrap.has-error { box-shadow: inset 0 0 0 1px rgba(255, 107, 125, 0.6); }
+.panel .primary-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+.panel .field-label > span:first-child { font-size: 12px; color: var(--muted); font-weight: 600; }
+.panel .field-toggle { padding: 0; }
+
+/* Prompt: el texto vive dentro de la tarjeta, sin caja propia */
+.prompt-wrap { position: relative; }
+.prompt-wrap .inspire { top: 10px; right: 12px; }
+.panel .field-prompt textarea {
+  min-height: 150px;
+  padding: 2px 0 0;
+  background: transparent;
+  box-shadow: none;
+  resize: none;
+  font-size: 14.5px;
+}
+.panel .field-prompt textarea:focus { background: transparent; box-shadow: none; }
+
+/* Subida de archivos: tarjeta grande con iconos */
+.panel .media-block { gap: 10px; }
+.panel .media-block > .field-wrap { padding: 10px; }
+.panel .media-block .field-label { padding: 0 4px; }
+.panel .dropzone { min-height: 140px; border-radius: 14px; }
+.upload-card { position: relative; width: 100%; display: grid; justify-items: center; gap: 4px; padding: 14px 8px; }
+.upload-card b { font-size: 14.5px; margin-top: 6px; }
+.upload-sub { color: var(--muted); font-size: 12.5px; }
+.optional {
+  position: absolute;
+  top: -8px;
+  right: -4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--muted);
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 600;
+}
+.glyphs { display: flex; }
+.glyph {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 6px 16px -8px rgba(0, 0, 0, 0.6);
+  color: #fff;
+}
+.glyph svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.dropzone:hover .glyph { background: rgba(143, 77, 255, 0.35); }
+
+/* Fila «Modelo ›» */
+.row-card { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: left; }
+button.row-card:hover { background: rgba(255, 255, 255, 0.08); }
+.row-text { display: grid; gap: 1px; min-width: 0; }
+.row-label { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+.row-text b { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-chevron { color: var(--muted); font-size: 22px; line-height: 1; transition: transform 0.2s; }
+.row-label-inline { font-size: 13.5px; font-weight: 600; }
+
+/* Cantidad − 1/4 + */
+.stepper { display: flex; align-items: center; gap: 12px; }
+.stepper button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  font-size: 16px;
+}
+.stepper button:hover:not(:disabled) { background: rgba(143, 77, 255, 0.35); }
+.stepper .mono { font-size: 13px; min-width: 28px; text-align: center; color: #fff; }
+
+/* Configuración avanzada (plegable) */
+.row-card.advanced { display: block; }
+.advanced summary { display: flex; justify-content: space-between; align-items: center; list-style: none; cursor: pointer; }
+.advanced summary::-webkit-details-marker { display: none; }
+.adv-title { font-size: 13.5px; font-weight: 600; display: inline-flex; gap: 8px; align-items: center; }
+.adv-title span { color: var(--accent-hi); }
+.advanced[open] .row-chevron { transform: rotate(90deg); }
+.advanced-body { display: grid; gap: 10px; margin-top: 12px; }
+.advanced-body .field-wrap { background: rgba(0, 0, 0, 0.18); }
+.advanced-body .compare, .advanced-body .notes { display: grid; gap: 8px; padding: 12px; border-radius: 14px; background: rgba(0, 0, 0, 0.18); }
+.advanced-body .notes ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 12.5px; display: grid; gap: 5px; }
+.advanced-body .power { background: rgba(0, 0, 0, 0.18); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
+
+/* ---------- Zona de resultados ---------- */
+
+.stage-main {
+  min-height: calc(100vh - 104px);
+  padding: 12px 16px 18px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  animation: none;
+}
+.gallery-head { align-items: center; margin-bottom: 16px; }
+.view-tabs { display: flex; gap: 4px; }
+.view-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border: 0;
+  border-radius: 11px;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.view-tabs button:hover { color: var(--text); }
+.view-tabs button.on { background: rgba(255, 255, 255, 0.09); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12); }
+.view-tabs .dot { margin-left: 2px; }
+
+/* Cómo funciona */
+.how { text-align: center; padding: 5vh 1vw 1vh; animation: rise 0.5s ease both; }
+.how h2 { margin: 0; font: 400 clamp(38px, 4.2vw, 64px)/1 var(--font-display); text-transform: uppercase; }
+.how-sub { margin: 10px auto 0; max-width: 56ch; color: var(--muted); font-size: 15px; }
+.how-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 34px; text-align: left; }
+.how-card {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+.how-n { color: var(--accent-hi); font-size: 12px; }
+.how-card h3 { margin: 0; font-size: 20px; font-weight: 700; }
+.how-card p { margin: 0; color: var(--muted); font-size: 13.5px; }
+.how-art { margin-top: 12px; aspect-ratio: 16 / 10; border-radius: 16px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2); }
+.how-a { background: radial-gradient(80% 90% at 20% 20%, #c9a8ff 0%, #7b3cf0 45%, #22113f 100%); }
+.how-b { background: linear-gradient(135deg, #3b1d78 0%, #8f4dff 50%, #e6d6ff 100%); }
+.how-c { background: radial-gradient(90% 80% at 80% 90%, #b98cff 0%, #4b1fa8 45%, #0d0916 100%); }
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 1060px) {
+  .workspace, .characters { grid-template-columns: 1fr; }
+  .panel { position: static; height: auto; }
+  .panel-scroll { overflow: visible; }
+  .stage-main { min-height: 0; }
+  .how-steps { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  .stage-image, .stage-video, .stage-transform, .stage-characters { padding: 10px; }
+  .panel .primary-grid { grid-template-columns: 1fr; }
+  .gallery-tools { width: 100%; }
+}

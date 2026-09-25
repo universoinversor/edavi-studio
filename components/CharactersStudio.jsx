@@ -52,12 +52,12 @@ export default function CharactersStudio({ onUse }) {
 
   return (
     <div className="characters">
-      <form className="composer" onSubmit={submit}>
+      <form className="composer panel" onSubmit={submit}>
         <header className="model-head">
           <div className="model-button static"><span className="mono dim">Entrenamiento</span><span className="model-name">Soul ID</span></div>
           <p className="model-desc">Entrena un personaje reutilizable a partir de tus fotos. Cuando esté listo, elígelo en «Personaje (Soul ID)» dentro de los modelos SOUL de la misma versión.</p>
         </header>
-        <div className="composer-body">
+        <div className="panel-scroll">
           <label className="field">
             <div className="field-label"><span>Nombre<b className="req">*</b></span><span className="mono dim">{name.length}/100</span></div>
             <input type="text" maxLength={100} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Valeria editorial" />
@@ -81,7 +81,7 @@ export default function CharactersStudio({ onUse }) {
             </div>
           </details>
         </div>
-        <footer className="generate-bar">
+        <footer className="panel-foot">
           <div className="mono dim endpoint">POST /v1/custom-references</div>
           <button type="submit" className="generate" disabled={busy || uploading}>
             <span>{uploading ? 'Subiendo…' : busy ? 'Enviando…' : 'Entrenar'}</span>
@@ -89,7 +89,7 @@ export default function CharactersStudio({ onUse }) {
         </footer>
       </form>
 
-      <section className="gallery">
+      <section className="gallery stage-main">
         <header className="gallery-head"><h2>Reparto</h2><span className="mono dim">{characters.length} personajes</span></header>
         {characters.length === 0 ? (
           <div className="empty"><p className="empty-title">Aún no hay reparto.</p><p className="dim">Los personajes que entrenes aparecerán aquí.</p></div>

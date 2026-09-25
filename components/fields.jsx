@@ -272,6 +272,30 @@ function DropZone({ accept, onFiles, multiple, children, disabled }) {
   );
 }
 
+const NOUN = { image: ['imagen', 'imágenes'], video: ['video', 'videos'], audio: ['audio', 'audios'] };
+
+function MediaGlyph({ kind }) {
+  const paths = {
+    image: <><rect x="4" y="5" width="16" height="14" rx="3" /><circle cx="9.5" cy="10" r="1.6" /><path d="m5 17 4.5-4.5 3.5 3.5 2.5-2.5L19 17" /></>,
+    video: <><rect x="3.5" y="6" width="12" height="12" rx="3" /><path d="m15.5 10.5 5-3v9l-5-3" /></>,
+    audio: <><path d="M9 17V6l10-2v11" /><circle cx="6.5" cy="17" r="2.5" /><circle cx="16.5" cy="15" r="2.5" /></>,
+  };
+  return <span className="glyph"><svg viewBox="0 0 24 24" aria-hidden>{paths[kind]}</svg></span>;
+}
+
+// Tarjeta de subida grande: iconos, título, formatos y etiqueta «Opcional».
+function UploadCard({ field, many, max }) {
+  const [one, plural] = NOUN[field.accept];
+  return (
+    <span className="upload-card">
+      {!field.required && <em className="optional">Opcional</em>}
+      <span className="glyphs"><MediaGlyph kind={field.accept} /></span>
+      <b>{many ? `Subir ${plural}` : `Subir ${one}`}</b>
+      <span className="upload-sub">{many ? `Hasta ${max} · ` : ''}{ACCEPT_LABEL[field.accept]}</span>
+    </span>
+  );
+}
+
 export function MediaField({ field, value, onChange, onBusy }) {
   const [upload, run, reset] = useUploader(onChange);
   const [pasting, setPasting] = useState(false);
@@ -293,7 +317,7 @@ export function MediaField({ field, value, onChange, onBusy }) {
           {upload && !upload.error ? (
             <span className="upload-progress"><i style={{ width: `${Math.round(upload.progress * 100)}%` }} />Subiendo {Math.round(upload.progress * 100)}%</span>
           ) : (
-            <span className="drop-copy"><b>Suelta o elige {field.accept === 'image' ? 'una imagen' : field.accept === 'video' ? 'un video' : 'un audio'}</b><em className="mono">{ACCEPT_LABEL[field.accept]}</em></span>
+            <UploadCard field={field} />
           )}
         </DropZone>
       )}
@@ -334,6 +358,11 @@ export function MediaListField({ field, value, onChange, onBusy }) {
   return (
     <div className="field">
       <Label field={field} aside={<span className="mono dim">{list.length}/{max}</span>} />
+      {list.length === 0 && busy === 0 ? (
+        <DropZone accept={field.accept} multiple onFiles={add}>
+          <UploadCard field={field} many max={max} />
+        </DropZone>
+      ) : (
       <div className="media-grid">
         {list.map((u, i) => (
           <div className="media-slot filled small" key={u + i}>
@@ -349,6 +378,7 @@ export function MediaListField({ field, value, onChange, onBusy }) {
           </DropZone>
         )}
       </div>
+      )}
       {error && <p className="field-error">{error}</p>}
     </div>
   );

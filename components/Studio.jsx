@@ -170,10 +170,7 @@ export default function Studio() {
           <Explore onOpen={openFromExplore} />
         ) : (
           <>
-            <header className="stage-head">
-              <h1>{current.label}</h1>
-              <p className="stage-blurb">{current.blurb}</p>
-            </header>
+            <h1 className="sr-only">{current.label}</h1>
             {studio === 'characters' ? (
               <CharactersStudio onUse={(c) => plant('image', SOUL_BY_VERSION[c.model_version] || SOUL_BY_VERSION.v2, { custom_reference_id: c.id })} />
             ) : (

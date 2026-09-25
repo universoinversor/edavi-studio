@@ -206,108 +206,113 @@ export default function Composer({ studio, seed, onModelChange }) {
   const looseErrors = errors.filter((e) => !fields.all.some((f) => f.key === e.key && visible(f)));
 
   return (
-    <section className="composer" aria-label="Compositor">
-      <header className="model-head">
-        <button type="button" className="model-button" onClick={() => setSheet(true)}>
-          <span className="mono dim">Modelo</span>
-          <span className="model-name">{model.family}</span>
-          <span className="model-caret" aria-hidden>↓</span>
-        </button>
-        {family?.models.length > 1 && (
-          <div className="workflow-chips" role="tablist" aria-label="Modo">
-            {family.models.map((m) => (
-              <button type="button" role="tab" key={m.id} aria-selected={m.id === modelId}
-                className={`chip ${m.id === modelId ? 'on' : ''}`} onClick={() => switchModel(m.id)}>
-                {workflowLabel(m.workflow)}
-              </button>
-            ))}
-          </div>
-        )}
-        <p className="model-desc">{model.familyDescription}</p>
-      </header>
+    <section className="composer panel" aria-label="Compositor">
+      {family?.models.length > 1 && (
+        <nav className="panel-tabs" role="tablist" aria-label="Modo">
+          {family.models.map((m) => (
+            <button type="button" role="tab" key={m.id} aria-selected={m.id === modelId}
+              className={m.id === modelId ? 'on' : ''} onClick={() => switchModel(m.id)}>
+              {workflowLabel(m.workflow)}
+            </button>
+          ))}
+        </nav>
+      )}
 
-      <div className="composer-body">
+      <div className="panel-scroll">
+        {fields.media.length > 0 && <div className="media-block">{fields.media.map(render)}</div>}
+
         {fields.prompt && (
           <div className="prompt-wrap">
             {INSPIRATION[studio] && <button type="button" className="inspire" onClick={inspire}>✦ Inspiración</button>}
             {render(fields.prompt)}
           </div>
         )}
-        {fields.media.length > 0 && <div className="media-block">{fields.media.map(render)}</div>}
+
+        <button type="button" className="row-card model-row" onClick={() => setSheet(true)}>
+          <span className="row-text">
+            <span className="row-label">Modelo</span>
+            <b>{model.family}</b>
+          </span>
+          <span className="row-chevron" aria-hidden>›</span>
+        </button>
+
         <div className="primary-grid">{fields.primary.filter(visible).map(render)}</div>
 
-        {canAnimate && (
-          <div className={`power ${animate.on ? 'on' : ''}`}>
-            <label className="power-head">
-              <span><b>Flujo: animar al terminar</b><em>La imagen se convierte en video automáticamente.</em></span>
-              <input type="checkbox" className="toggle" checked={animate.on} onChange={(e) => setAnimate((a) => ({ ...a, on: e.target.checked }))} />
-            </label>
-            {animate.on && (
-              <div className="power-body">
-                <select value={animate.modelId} onChange={(e) => setAnimate((a) => ({ ...a, modelId: e.target.value }))} aria-label="Modelo de video">
-                  {targets.map((m) => <option key={m.id} value={m.id}>{m.family} · {workflowLabel(m.workflow)}</option>)}
-                </select>
-                <textarea rows={2} value={animate.prompt} placeholder="Movimiento: la cámara orbita lentamente, el pelo se mueve con el viento…"
-                  onChange={(e) => setAnimate((a) => ({ ...a, prompt: e.target.value }))} />
+        <div className="row-card stepper-row">
+          <span className="row-label-inline">Cantidad</span>
+          <div className="stepper" role="group" aria-label="Variaciones">
+            <button type="button" onClick={() => setVariations((v) => Math.max(1, v - 1))} disabled={variations <= 1} aria-label="Menos">−</button>
+            <span className="mono">{variations}/4</span>
+            <button type="button" onClick={() => setVariations((v) => Math.min(4, v + 1))} disabled={variations >= 4} aria-label="Más">+</button>
+          </div>
+        </div>
+
+        <details className="row-card advanced" open={compareWith.length > 0 || animate.on || undefined}>
+          <summary>
+            <span className="adv-title"><span aria-hidden>⚙</span> Configuración avanzada</span>
+            <span className="row-chevron" aria-hidden>›</span>
+          </summary>
+          <div className="advanced-body">
+            {fields.advanced.length > 0 && <div className="primary-grid">{fields.advanced.filter(visible).map(render)}</div>}
+
+            {canAnimate && (
+              <div className={`power ${animate.on ? 'on' : ''}`}>
+                <label className="power-head">
+                  <span><b>Animar al terminar</b><em>La imagen se convierte en video automáticamente.</em></span>
+                  <input type="checkbox" className="toggle" checked={animate.on} onChange={(e) => setAnimate((a) => ({ ...a, on: e.target.checked }))} />
+                </label>
+                {animate.on && (
+                  <div className="power-body">
+                    <select value={animate.modelId} onChange={(e) => setAnimate((a) => ({ ...a, modelId: e.target.value }))} aria-label="Modelo de video">
+                      {targets.map((m) => <option key={m.id} value={m.id}>{m.family} · {workflowLabel(m.workflow)}</option>)}
+                    </select>
+                    <textarea rows={2} value={animate.prompt} placeholder="Movimiento: la cámara orbita lentamente, el pelo se mueve con el viento…"
+                      onChange={(e) => setAnimate((a) => ({ ...a, prompt: e.target.value }))} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {candidates.length > 0 && (
+              <div className="compare">
+                <div className="field-label"><span>Comparar con otros modelos</span><span className="mono dim">{compareWith.length ? `${chosen.length}/3` : `${candidates.length} compatibles`}</span></div>
+                <div className="chips">
+                  {candidates.map(({ model: m }) => {
+                    const on = compareWith.includes(m.familyId);
+                    return (
+                      <button type="button" key={m.familyId} className={`chip ${on ? 'on' : ''}`}
+                        disabled={!on && compareWith.length >= 3}
+                        onClick={() => setCompareWith((list) => (on ? list.filter((x) => x !== m.familyId) : [...list, m.familyId]))}>
+                        {m.family}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {model.notes.length > 0 && (
+              <div className="notes">
+                <div className="field-label"><span>Notas del modelo</span><a className="mono" href={model.docs} target="_blank" rel="noreferrer">docs ↗</a></div>
+                <ul>{model.notes.map((n) => <li key={n}>{n}</li>)}</ul>
               </div>
             )}
           </div>
-        )}
-
-        {candidates.length > 0 && (
-          <details className="fold compare" open={compareWith.length > 0 || undefined}>
-            <summary><span>Comparar con otros modelos</span><span className="mono dim">{compareWith.length ? `${chosen.length} elegidos` : `${candidates.length} compatibles`}</span></summary>
-            <p className="hint">Envía el mismo prompt a varios modelos a la vez y compara los resultados lado a lado.</p>
-            <div className="chips">
-              {candidates.map(({ model: m }) => {
-                const on = compareWith.includes(m.familyId);
-                return (
-                  <button type="button" key={m.familyId} className={`chip ${on ? 'on' : ''}`}
-                    disabled={!on && compareWith.length >= 3}
-                    onClick={() => setCompareWith((list) => (on ? list.filter((x) => x !== m.familyId) : [...list, m.familyId]))}>
-                    {m.family}
-                  </button>
-                );
-              })}
-            </div>
-          </details>
-        )}
-
-        {fields.advanced.length > 0 && (
-          <details className="fold">
-            <summary><span>Avanzado</span><span className="mono dim">{fields.advanced.length}</span></summary>
-            <div className="primary-grid">{fields.advanced.filter(visible).map(render)}</div>
-          </details>
-        )}
-
-        {model.notes.length > 0 && (
-          <details className="fold notes">
-            <summary><span>Notas del modelo</span><a className="mono dim" href={model.docs} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>docs ↗</a></summary>
-            <ul>{model.notes.map((n) => <li key={n}>{n}</li>)}</ul>
-          </details>
-        )}
+        </details>
 
         {looseErrors.length > 0 && (
           <ul className="form-errors">{looseErrors.map((e) => <li key={e.message}>{e.message}</li>)}</ul>
         )}
       </div>
 
-      <footer className="generate-bar">
-        <div className="gen-options">
-          <div className="variations" role="radiogroup" aria-label="Variaciones">
-            {[1, 2, 3, 4].map((n) => (
-              <button type="button" key={n} role="radio" aria-checked={variations === n} className={variations === n ? 'on' : ''} onClick={() => setVariations(n)}>×{n}</button>
-            ))}
-          </div>
-          <span className="cost mono" title="Estimación de Higgsfield antes de generar">
-            {!isValid ? 'Completa los campos' : estimates.loading ? 'Calculando…'
-              : totalCost ? `≈ ${totalCost.credits.toFixed(totalCost.credits < 10 ? 2 : 1)} créditos · $${totalCost.usd.toFixed(2)}${totalCost.partial ? '+' : ''}`
-                : 'Costo no disponible'}
-          </span>
-        </div>
+      <footer className="panel-foot">
+        <span className="cost mono" title="Estimación de Higgsfield antes de generar">
+          {!isValid ? 'Completa los campos obligatorios' : estimates.loading ? 'Calculando costo…'
+            : totalCost ? `≈ ${totalCost.credits.toFixed(totalCost.credits < 10 ? 2 : 1)} créditos · $${totalCost.usd.toFixed(2)}${totalCost.partial ? '+' : ''}`
+              : 'Costo no disponible'}
+        </span>
         <button type="button" className={`generate ${flash ? 'flash' : ''}`} onClick={generate} disabled={uploading}>
-          <span>{uploading ? 'Subiendo…' : flash ? '¡Enviado!' : total > 1 ? `Generar ${total}` : 'Generar'}</span>
-          <kbd className="mono">Ctrl ↵</kbd>
+          {uploading ? 'Subiendo…' : flash ? '¡Enviado!' : total > 1 ? `Generar ${total}` : 'Generar'}
         </button>
       </footer>
 
