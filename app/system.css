@@ -311,3 +311,33 @@
   .lib-bulk { top: 70px; }
   .lib-bulk-actions { margin-left: 0; }
 }
+
+/* ---------- Sistema de avatar ---------- */
+
+.avatar-xs { width: 40px; }
+.avatar-xs .avatar-halo { inset: 0; filter: blur(8px); }
+.avatar-xs .avatar-img { animation-duration: 4s; filter: drop-shadow(0 4px 6px rgba(var(--shade-rgb), 0.4)); }
+.avatar-xs .avatar-orbit { inset: -4px; border-width: 1.5px; }
+
+.hero-visual .hero-mascot { width: 62%; }
+.hero-visual .avatar-bubble { position: absolute; bottom: -4%; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+.masonry-cta .avatar { margin-bottom: calc(var(--space-2) * -1); }
+
+.foot-status { display: flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: 40px; }
+.foot-status .cost { text-align: left; }
+
+.section-action { margin-left: auto; }
+
+.avatar-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.avatar-steps li { display: inline-flex; align-items: center; gap: var(--space-2); padding: 4px 10px 4px 4px; border-radius: var(--r-pill); background: rgba(var(--ink-rgb), 0.05); color: var(--muted); font-size: var(--fs-xs); font-weight: 600; }
+.avatar-step-n { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(var(--ink-rgb), 0.1); font-size: 11px; }
+.avatar-steps li.current { color: var(--text); box-shadow: inset 0 0 0 1px var(--accent-hi); }
+.avatar-steps li.current .avatar-step-n { background: var(--accent); color: #fff; }
+.avatar-steps li.done { color: var(--ok); }
+.avatar-steps li.done .avatar-step-n { background: rgba(126, 226, 168, 0.2); color: var(--ok); }
+
+.photo-meter { height: 6px; margin-top: var(--space-3); border-radius: var(--r-pill); background: rgba(var(--ink-rgb), 0.08); overflow: hidden; }
+.photo-meter i { display: block; height: 100%; background: var(--brand-grad); transition: width var(--dur-slow) var(--ease-out); }
+
+.cast-card.is-default { box-shadow: inset 0 0 0 1px var(--accent-hi), var(--glass-shadow); }
+.cast-card b { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }

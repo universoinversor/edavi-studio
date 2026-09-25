@@ -10,6 +10,9 @@ import { clearDraft, hasContent, loadDraft, saveDraft } from '@/lib/drafts';
 import { COPY } from '@/lib/copy';
 import { toast } from '@/lib/toast';
 import { useDialog } from '@/lib/useDialog';
+import { useMascotMood } from '@/lib/mascot';
+import { useCharacters, withDefaultAvatar } from '@/lib/characters';
+import Avatar from './Avatar';
 import {
   ColorField, ColorsField, EnumField, MediaField, MediaListField, NumberField, PresetField, PromptField,
   RangeField, ReferenceField, SeedField, ShotsField, StringField, StyleField, TagsField, ToggleField,
@@ -85,6 +88,8 @@ export default function Composer({ studio, seed, onModelChange }) {
   const [animate, setAnimate] = useState({ on: false, modelId: ANIMATE_DEFAULT, prompt: '' });
   const [estimates, setEstimates] = useState({ main: null, compare: {}, loading: false, error: false });
   const panelRef = useRef(null);
+  const mood = useMascotMood();
+  const characters = useCharacters();
   const firstSeed = useRef(seed.nonce);
 
   // Una «semilla» nueva (reutilizar, usar como entrada…) reinicia el formulario.
@@ -98,6 +103,12 @@ export default function Composer({ studio, seed, onModelChange }) {
     // Solo el nonce indica una semilla nueva; recordar el modelo no debe borrar el formulario.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seed.nonce]);
+
+  // Avatar principal: se aplica al abrir un modelo SOUL compatible si no hay otro elegido.
+  useEffect(() => {
+    setValues((prev) => withDefaultAvatar(getModel(modelId), prev));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modelId, characters]);
 
   // Autoguardado del borrador (con retardo para no escribir en cada tecla).
   useEffect(() => {
@@ -153,7 +164,7 @@ export default function Composer({ studio, seed, onModelChange }) {
   function switchModel(id) {
     const next = getModel(id);
     setModelId(id);
-    setValues((prev) => carryValues(next, prev));
+    setValues((prev) => withDefaultAvatar(next, carryValues(next, prev)));
     setErrors([]);
     setCompareWith([]);
     setSheet(false);
@@ -371,7 +382,10 @@ export default function Composer({ studio, seed, onModelChange }) {
       </div>
 
       <footer className="panel-foot">
-        <span className="cost mono" title={t.cost.hint} aria-live="polite">{cost}</span>
+        <div className="foot-status">
+          <Avatar size="xs" mood={mood} />
+          <span className="cost mono" title={t.cost.hint} aria-live="polite">{mood === 'thinking' || mood === 'offline' ? COPY.avatar.moods[mood] : cost}</span>
+        </div>
         <button type="button" className={`generate ${flash ? 'flash' : ''}`} onClick={generate} disabled={uploading} aria-busy={uploading}>
           {uploading ? t.uploading : flash ? t.sent : total > 1 ? t.generateN(total) : t.generate}
         </button>
