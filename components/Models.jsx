@@ -1,6 +1,8 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { familiesForStudio, FEATURED, workflowLabel } from '@/lib/catalog';
+import { familiesForStudio, FEATURED, models as CATALOG, workflowLabel } from '@/lib/catalog';
+import { exampleFor } from '@/lib/examples';
+import ExampleMedia from './ExampleMedia';
 import { COPY } from '@/lib/copy';
 import Avatar from './Avatar';
 import Icon from './Icon';
@@ -19,17 +21,22 @@ function hue(id) {
 
 function FamilyCard({ family, studio, badge, onOpen }) {
   const h = hue(family.id);
+  const [hover, setHover] = useState(false);
+  const example = useMemo(() => exampleFor(family, CATALOG), [family]);
   return (
-    <article className="mcard" style={/** @type {any} */ ({ '--h': h })}>
+    <article className={`mcard ${example ? 'has-example' : ''}`} style={/** @type {any} */ ({ '--h': h })}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onFocus={() => setHover(true)} onBlur={() => setHover(false)}>
       <button type="button" className="mcard-cover" onClick={() => onOpen(studio, family.models[0].id)}
         aria-label={t.openMode(family.name, workflowLabel(family.models[0].workflow))}>
         <span className="mcard-art" aria-hidden>
+          <ExampleMedia example={example} playing={hover} credit={false} />
           <span className="mcard-word">{family.name}</span>
         </span>
         <span className="mcard-chips" aria-hidden>
           <span className="mcard-kind"><Icon name={studio === 'image' ? 'camera' : 'video'} size={13} /> {KINDS[studio]}</span>
           {badge && <em className={`tag tag-${badge.toLowerCase()}`}>{badge}</em>}
         </span>
+        {example && <span className="ex-credit" aria-hidden>{COPY.examples.credit}</span>}
       </button>
       <div className="mcard-body">
         <h3 className="mcard-name">{family.name}</h3>

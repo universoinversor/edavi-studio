@@ -9,12 +9,20 @@ import { COPY } from '@/lib/copy';
 import { toast } from '@/lib/toast';
 import { Lightbox, Media, download, fileName } from './media';
 import Avatar from './Avatar';
+import ExampleMedia from './ExampleMedia';
+import { exampleForEndpoint } from '@/lib/examples';
 import Portal from './Portal';
 import Icon from './Icon';
 
 const t = COPY.gallery;
 const WEEK = 7 * 24 * 3600 * 1000;
 const HOW_ART = ['how-a', 'how-b', 'how-c'];
+// Un ejemplo real por paso (se ve la miniatura; el video se reproduce al pasar el ratón).
+const HOW_EXAMPLES = {
+  image: ['higgsfield-ai/soul/v2/standard', 'marketing-studio/image', 'ideogram/v4.0'],
+  video: ['bytedance/seedance-2.5/text-to-video', 'kling-video/v3.0/std/text-to-video', 'higgsfield/cinema-studio/4.0'],
+  transform: ['higgsfield/genjutsu/motion-transfer/v1.0', 'kling-video/o3/first-last-frame', 'bytedance/seedance-2.0/text-to-video'],
+};
 
 function elapsed(ms) {
   const s = Math.max(0, Math.round(ms / 1000));
@@ -109,17 +117,21 @@ export function Frame({ job, index, now, onReuse, onUseAsInput, onOpen, loggedIn
 
 function HowItWorks({ studio }) {
   const how = t.howSteps[studio] || t.howSteps.image;
+  const [hover, setHover] = useState(-1);
+  const examples = HOW_EXAMPLES[studio] || HOW_EXAMPLES.image;
   return (
     <div className="how">
       <h2>{how.title}</h2>
       <p className="how-sub">{how.sub}</p>
       <div className="how-steps">
         {how.steps.map(([title, text], i) => (
-          <article key={title} className="how-card">
+          <article key={title} className="how-card" onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(-1)}>
             <span className="how-n mono">{String(i + 1).padStart(2, '0')}</span>
             <h3>{title}</h3>
             <p>{text}</p>
-            <div className={`how-art ${HOW_ART[i]}`} aria-hidden />
+            <div className={`how-art ${HOW_ART[i]}`} aria-hidden>
+              <ExampleMedia example={exampleForEndpoint(examples[i])} playing={hover === i} />
+            </div>
           </article>
         ))}
       </div>

@@ -6,6 +6,8 @@ import { useMascotMood } from '@/lib/mascot';
 import { COPY } from '@/lib/copy';
 import Avatar from './Avatar';
 import Dashboard from './Dashboard';
+import ExampleMedia from './ExampleMedia';
+import { exampleForEndpoint } from '@/lib/examples';
 import Icon from './Icon';
 
 const t = COPY.explore;
@@ -13,10 +15,10 @@ const PROMPT_COUNT = '1.526';
 
 // Destino y estilo visual de cada banner (los textos están en lib/copy.js).
 const BANNER_TARGETS = [
-  { studio: 'video', model: 'seedance-2-5/text-to-video', art: 'art-a' },
-  { studio: 'image', model: 'soul-2/generate', art: 'art-b' },
-  { studio: 'transform', model: 'kling-3-motion-control/pro', art: 'art-c' },
-  { studio: 'video', model: 'cinema-studio-4/generate', art: 'art-d' },
+  { studio: 'video', model: 'seedance-2-5/text-to-video', art: 'art-a', example: 'bytedance/seedance-2.5/text-to-video' },
+  { studio: 'image', model: 'soul-2/generate', art: 'art-b', example: 'higgsfield-ai/soul/v2/standard' },
+  { studio: 'transform', model: 'kling-3-motion-control/pro', art: 'art-c', example: 'kling-video/v3.0/std/text-to-video' },
+  { studio: 'video', model: 'cinema-studio-4/generate', art: 'art-d', example: 'higgsfield/cinema-studio/4.0' },
 ];
 
 function Glyph({ kind }) {
@@ -97,6 +99,7 @@ export default function Explore({ onOpen }) {
           return (
             <button type="button" key={b.title} className="banner" onClick={() => onOpen(target.studio, target.model)}>
               <span className={`banner-art ${target.art}`} aria-hidden>
+                <ExampleMedia example={exampleForEndpoint(target.example)} autoPlay />
                 <span className="sticker-over">{b.over}</span>
                 <span className="sticker sticker-1">{b.lines[0]}</span>
                 <span className="sticker sticker-2">{b.lines[1]}</span>
