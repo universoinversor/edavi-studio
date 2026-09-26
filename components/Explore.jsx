@@ -6,6 +6,7 @@ import { useJobs, withArchive } from '@/lib/jobs';
 import { useAuth } from '@/lib/auth';
 import { useMascotMood } from '@/lib/mascot';
 import { exampleForEndpoint } from '@/lib/examples';
+import { PREMIERE } from '@/lib/premiere';
 import { COPY } from '@/lib/copy';
 import Avatar from './Avatar';
 import Dashboard from './Dashboard';
@@ -97,6 +98,18 @@ export default function Explore({ onOpen, showcase = false }) {
     <div className="explore">
       <Hero onOpen={onOpen} total={total} />
       {!showcase && <Dashboard onOpen={onOpen} compact={false} statsOnly />}
+
+      {PREMIERE && (
+        <section className="premiere" aria-labelledby="premiere-title">
+          <div className="premiere-copy">
+            <span className="premiere-kicker mono">{t.premiere.kicker}</span>
+            <h2 id="premiere-title">{PREMIERE.title}</h2>
+            <p>{PREMIERE.logline}</p>
+            <p className="dim premiere-credits">{PREMIERE.credits}</p>
+          </div>
+          <video className="premiere-player" src={PREMIERE.src} poster={PREMIERE.poster} controls playsInline preload="metadata" />
+        </section>
+      )}
 
       <section className="banners banners-grid" aria-label={t.bannersLabel}>
         {t.banners.map((b, i) => {

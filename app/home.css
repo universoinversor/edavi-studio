@@ -160,3 +160,16 @@
 /* Pie del compositor: el texto de estado nunca se sale del panel. */
 .panel-foot .foot-status { min-width: 0; }
 .panel-foot .foot-status .cost { min-width: 0; white-space: normal; text-align: center; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ---------- Estreno (corto destacado) ---------- */
+.premiere {
+  display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr); gap: var(--space-6); align-items: center;
+  padding: clamp(18px, 3vw, 32px); border-radius: var(--r-2xl);
+  background: radial-gradient(80% 120% at 0% 0%, rgba(var(--a-rgb), 0.35), transparent 60%), var(--glass); box-shadow: var(--glass-edge);
+}
+.premiere-kicker { font-size: var(--fs-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-hi); }
+.premiere h2 { margin: var(--space-2) 0; font: 400 clamp(38px, 4vw, 64px)/0.95 var(--font-display); text-transform: uppercase; }
+.premiere p { margin: 0 0 var(--space-2); line-height: var(--lh-body); }
+.premiere-credits { font-size: var(--fs-sm); }
+.premiere-player { width: 100%; aspect-ratio: 16 / 9; border-radius: var(--r-lg); background: #000; box-shadow: 0 30px 80px -30px rgba(var(--a-rgb), 0.6); }
+@media (max-width: 900px) { .premiere { grid-template-columns: 1fr; } }

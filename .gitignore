@@ -11,3 +11,7 @@ out/
 
 .vercel
 .env*
+
+# Material de pruebas locales (no se sube)
+public/_pruebas/
+.next-real/
