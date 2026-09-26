@@ -1,5 +1,6 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { storage } from '@/lib/providers';
 import { familiesForStudio, FEATURED } from '@/lib/catalog';
 import { useJobs, withArchive } from '@/lib/jobs';
 import { useMascotMood } from '@/lib/mascot';
@@ -43,7 +44,14 @@ function ModelTile({ family, studio, badge, onOpen }) {
   );
 }
 
-export default function Explore({ onOpen }) {
+export default function Explore({ onOpen, showcase = false }) {
+  const [gallery, setGallery] = useState([]);
+  useEffect(() => {
+    if (!showcase) return undefined;
+    let alive = true;
+    storage.fetchShowcase(24).then((rows) => { if (alive) setGallery(rows); });
+    return () => { alive = false; };
+  }, [showcase]);
   const jobs = useJobs();
   const mood = useMascotMood();
   const [filter, setFilter] = useState('all');
@@ -54,14 +62,14 @@ export default function Explore({ onOpen }) {
     const family = groups.find((g) => g.studio === f.studio)?.families.find((x) => x.id === f.family);
     return family ? { ...f, family } : null;
   }).filter(Boolean), [groups]);
-  const creations = useMemo(() => jobs.map(withArchive).filter((j) => j.status === 'completed')
-    .flatMap((j) => j.outputs.filter((o) => o.type !== 'audio').map((o) => ({ ...o, job: j }))).slice(0, 24), [jobs]);
+  const creations = useMemo(() => (showcase ? gallery : jobs).map(withArchive).filter((j) => j.status === 'completed')
+    .flatMap((j) => j.outputs.filter((o) => o.type !== 'audio').map((o) => ({ ...o, job: j }))).slice(0, 24), [jobs, gallery, showcase]);
   const total = groups.reduce((n, g) => n + g.families.reduce((m, f) => m + f.models.length, 0), 0);
   const catalog = groups.filter((g) => filter === 'all' || g.studio === filter).flatMap((g) => g.families.map((family) => ({ g, family })));
 
   return (
     <div className="explore">
-      <Dashboard onOpen={onOpen} />
+      <Dashboard onOpen={onOpen} compact={showcase} />
       <section className="hero" aria-labelledby="hero-title">
         <div className="hero-copy">
           <span className="eyebrow"><i aria-hidden /> {t.eyebrow}</span>
@@ -149,9 +157,9 @@ export default function Explore({ onOpen }) {
 
       <section className="creations" aria-labelledby="creations-title">
         <header className="section-head">
-          <h2 id="creations-title">{t.creations[0]}</h2>
-          <p className="dim">{t.creations[1]}</p>
-          {creations.length > 0 && <button type="button" className="pill-btn section-action" onClick={() => onOpen('library')}><Icon name="grid" size={16} /> {t.seeLibrary}</button>}
+          <h2 id="creations-title">{(showcase ? t.showcase : t.creations)[0]}</h2>
+          <p className="dim">{(showcase ? t.showcase : t.creations)[1]}</p>
+          {creations.length > 0 && !showcase && <button type="button" className="pill-btn section-action" onClick={() => onOpen('library')}><Icon name="grid" size={16} /> {t.seeLibrary}</button>}
         </header>
         {creations.length ? (
           <div className="masonry">
@@ -169,8 +177,8 @@ export default function Explore({ onOpen }) {
             {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((k) => <span key={k} className={`ghost ghost-${k}`} aria-hidden />)}
             <div className="masonry-cta">
               <Avatar size="md" mood="empty" />
-              <p>{t.emptyCreations}</p>
-              <button type="button" className="cta" onClick={() => onOpen('video')}>{t.emptyCta}</button>
+              <p>{showcase ? t.emptyShowcase : t.emptyCreations}</p>
+              {!showcase && <button type="button" className="cta" onClick={() => onOpen('video')}>{t.emptyCta}</button>}
             </div>
           </div>
         )}

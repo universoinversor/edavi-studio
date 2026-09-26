@@ -19,7 +19,8 @@ function displayName(session) {
 }
 
 // Cabecera del panel: saludo y métricas de actividad (estilo consola).
-export default function Dashboard({ onOpen }) {
+/** @param {{ onOpen: (id: string) => void, compact?: boolean }} props */
+export default function Dashboard({ onOpen, compact = false }) {
   const jobs = useJobs();
   const { session } = useAuth();
   const mood = useMascotMood();
@@ -54,11 +55,11 @@ export default function Dashboard({ onOpen }) {
         </h1>
         <div className="dash-actions">
           <button type="button" className="pill-btn" onClick={() => onOpen('models')}><Icon name="layers" size={16} /> {t.models}</button>
-          <button type="button" className="pill-btn" onClick={() => onOpen('library')}><Icon name="grid" size={16} /> {t.library}</button>
+          {!compact && <button type="button" className="pill-btn" onClick={() => onOpen('library')}><Icon name="grid" size={16} /> {t.library}</button>}
         </div>
       </div>
 
-      <div className="dash-stats">
+      {!compact && <div className="dash-stats">
         <div className="stat stat-accent">
           <b>{stats.today}</b><span>{t.stats.today}</span>
         </div>
@@ -79,7 +80,7 @@ export default function Dashboard({ onOpen }) {
             ))}
           </ol>
         </div>
-      </div>
+      </div>}
     </section>
   );
 }

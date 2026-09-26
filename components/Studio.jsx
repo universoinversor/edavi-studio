@@ -19,6 +19,9 @@ import Explore from './Explore';
 import PromptLibrary from './PromptLibrary';
 import Library from './Library';
 import Models from './Models';
+import AdminPanel from './AdminPanel';
+import RequestAccess from './RequestAccess';
+import { useRole } from '@/lib/role';
 import Avatar from './Avatar';
 import AuthModal from './AuthModal';
 import AccountMenu from './AccountMenu';
@@ -36,7 +39,7 @@ const SOUL_BY_VERSION = { v2: 'soul-2/generate', v1: 'soul-standard/generate', c
 const ROUTES = STUDIOS.map((s) => s.id);
 // Barra lateral (escritorio): secciones agrupadas como una consola.
 /** @type {Array<[string, string[]]>} */
-const SIDEBAR_GROUPS = [['main', ['explore', 'models']], ['create', ['image', 'video', 'transform', 'characters']], ['resources', ['prompts', 'library']]];
+const SIDEBAR_GROUPS = [['main', ['explore', 'models']], ['create', ['image', 'video', 'transform', 'characters']], ['resources', ['prompts', 'library']], ['manage', ['admin']]];
 // Móvil: máximo 5 destinos; el resto va en «Más».
 const MOBILE_MAIN = ['explore', 'image', 'video', 'prompts'];
 
@@ -67,6 +70,7 @@ const NAV_ICONS = {
   transform: <><path d="M4 8h12l-3-3M20 16H8l3 3" /></>,
   characters: <><circle cx="12" cy="8.5" r="3.5" /><path d="M5 20a7 7 0 0 1 14 0" /></>,
   prompts: <><path d="M5 4h11l3 3v13H5z" /><path d="M9 10h6M9 14h6M9 18h3" /></>,
+  admin: <><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.2 7.5 9.5 4.3-1.3 7.5-4.9 7.5-9.5V6L12 3Z" /><path d="m9 12 2 2 4-4" /></>,
   library: <><rect x="3.5" y="3.5" width="7" height="7" rx="2" /><rect x="13.5" y="3.5" width="7" height="7" rx="2" /><rect x="3.5" y="13.5" width="7" height="7" rx="2" /><rect x="13.5" y="13.5" width="7" height="7" rx="2" /></>,
 };
 
@@ -83,6 +87,9 @@ export default function Studio() {
   const [auth, setAuth] = useState(null); // { mode, reason } o null
   const [more, setMore] = useState(false);
   const [onboarding, setOnboarding] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+  const { isAdmin, role, ready: roleReady } = useRole();
+  const guest = authEnabled && roleReady && !isAdmin;
   const { session } = useAuth();
   const theme = useTheme();
   const online = useOnline();
@@ -115,6 +122,8 @@ export default function Studio() {
       setSettings({ open: true, reason: e.detail?.code === 'password' ? COPY.errors.password : COPY.errors.badCredentials });
     };
     const onRecovery = () => setAuth({ mode: 'recovery' });
+    const onRequest = () => { setAuth(null); setRequesting(true); };
+    window.addEventListener('edavi:request-access', onRequest);
     window.addEventListener('popstate', onPop);
     window.addEventListener('edavi:settings', syncKey);
     window.addEventListener('edavi:auth-required', onAuthRequired);
@@ -124,6 +133,7 @@ export default function Studio() {
       window.removeEventListener('edavi:settings', syncKey);
       window.removeEventListener('edavi:auth-required', onAuthRequired);
       window.removeEventListener('edavi:password-recovery', onRecovery);
+      window.removeEventListener('edavi:request-access', onRequest);
     };
   }, []);
 
@@ -213,9 +223,10 @@ export default function Studio() {
     );
   };
 
+  const canManage = authEnabled && isAdmin;
+  const visibleStudios = STUDIOS.filter((s) => s.id !== 'admin' || canManage);
   const inMore = !MOBILE_MAIN.includes(studio);
   const moreRunning = running.filter((j) => !MOBILE_MAIN.includes(j.studio)).length;
-  const needsLogin = health?.loginRequired && !session;
   const needsKey = health && !health.mock && !health.loginRequired && !health.serverCredentials && !hasOwnKey;
   const current = STUDIOS.find((s) => s.id === studio) || STUDIOS[0];
   const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
@@ -229,7 +240,7 @@ export default function Studio() {
           <Logo />
         </button>
         <nav className="side-nav" aria-label={t.navLabel}>
-          {SIDEBAR_GROUPS.map(([group, ids]) => (
+          {SIDEBAR_GROUPS.filter(([group]) => group !== 'manage' || canManage).map(([group, ids]) => (
             <div className="side-group" key={group}>
               <p className="side-group-label">{t.sidebar.groups[group]}</p>
               {ids.map((id) => {
@@ -246,6 +257,16 @@ export default function Studio() {
             </div>
           ))}
         </nav>
+        {guest ? (
+          <div className="side-card">
+            <div className="side-card-head">
+              <Avatar size="sm" mood="idle" />
+              <span className="mono">{t.sidebar.guestKicker}</span>
+            </div>
+            <p><span className="dim">{t.sidebar.guestText}</span></p>
+            <button type="button" className="cta small" onClick={() => setRequesting(true)}><Icon name="user" size={16} /> {t.sidebar.requestCta}</button>
+          </div>
+        ) : (
         <div className="side-card">
           <div className="side-card-head">
             <Avatar size="sm" mood={running.length ? 'thinking' : 'idle'} />
@@ -254,12 +275,13 @@ export default function Studio() {
           <p><b>{t.sidebar.cardGenerations(jobsToday.length)}</b><span className="dim">{t.sidebar.cardSpent(spentToday.toFixed(1))}</span></p>
           <button type="button" className="cta small" onClick={() => open(seeds[studio] ? studio : 'image')}><Icon name="sparkles" size={16} /> {t.sidebar.cardCta}</button>
         </div>
+        )}
       </aside>
       <header className="topbar">
         <button type="button" className="brand" onClick={() => goStudio('explore')} aria-label={t.home}>
           <Logo />
         </button>
-        <nav className="studio-nav" aria-label={t.navLabel}>{STUDIOS.map(tabButton)}</nav>
+        <nav className="studio-nav" aria-label={t.navLabel}>{visibleStudios.map(tabButton)}</nav>
         <div className="topbar-title">
           <b>{current.label}</b>
           <span className="dim">{current.blurb}</span>
@@ -280,14 +302,16 @@ export default function Studio() {
           ) : (
             <button type="button" className="pill-btn" onClick={() => setAuth({ mode: 'signin' })}>{COPY.account.signIn}</button>
           ))}
-          <button type="button" className="cta small" onClick={() => open(seeds[studio] ? studio : 'image')}>{t.create}</button>
+          {guest
+            ? <button type="button" className="cta small" onClick={() => setRequesting(true)}>{t.sidebar.requestCta}</button>
+            : <button type="button" className="cta small" onClick={() => open(seeds[studio] ? studio : 'image')}>{t.create}</button>}
         </div>
       </header>
 
       <main id="contenido" tabIndex={-1} className={`stage stage-${studio}`}>
-        {needsLogin && (
-          <button type="button" className="notice notice-action" onClick={() => setAuth({ mode: 'signin' })}>
-            <b>{t.notices.login[0]}</b> {t.notices.login[1]} <Icon name="arrowRight" size={16} />
+        {guest && ['image', 'video', 'transform', 'characters'].includes(studio) && (
+          <button type="button" className="notice notice-action" onClick={() => setRequesting(true)}>
+            <b>{COPY.access[role === 'member' ? 'member' : 'guest'][0]}</b> {COPY.access[role === 'member' ? 'member' : 'guest'][1]} <Icon name="arrowRight" size={16} />
           </button>
         )}
         {needsKey && (
@@ -302,9 +326,11 @@ export default function Studio() {
 
         <ErrorBoundary resetKey={studio}>
         {studio === 'explore' ? (
-          <Explore onOpen={open} />
+          <Explore onOpen={open} showcase={!isAdmin && authEnabled} />
         ) : studio === 'models' ? (
           <Models onOpen={open} />
+        ) : studio === 'admin' ? (
+          <AdminPanel health={health} />
         ) : studio === 'library' ? (
           <Library onReuse={onReuse} onCreate={() => open('image')} />
         ) : studio === 'prompts' ? (
@@ -341,7 +367,7 @@ export default function Studio() {
           <div className="sheet-backdrop more-backdrop" onClick={() => setMore(false)}>
             <div className="sheet more-sheet" role="dialog" aria-modal="true" aria-label={t.moreTitle} onClick={(e) => e.stopPropagation()}>
               <span className="grabber" aria-hidden />
-              {STUDIOS.filter((s) => !MOBILE_MAIN.includes(s.id)).map((s) => (
+              {visibleStudios.filter((s) => !MOBILE_MAIN.includes(s.id)).map((s) => (
                 <button type="button" key={s.id} className={`more-row ${studio === s.id ? 'on' : ''}`} onClick={() => goStudio(s.id)}>
                   <NavIcon id={s.id} /><span><b>{s.label}</b><em>{s.blurb}</em></span>
                 </button>
@@ -366,6 +392,7 @@ export default function Studio() {
       <Toasts />
       {onboarding && <Onboarding onFinish={finishOnboarding} />}
       {auth && <AuthModal mode={auth.mode} reason={auth.reason} allowSignup={Boolean(health?.allowSignup)} onClose={() => setAuth(null)} />}
+      {requesting && <RequestAccess onClose={() => setRequesting(false)} />}
       {settings.open && <SettingsModal health={health} reason={settings.reason} onClose={() => setSettings({ open: false, reason: null })} />}
     </div>
   );

@@ -252,3 +252,33 @@
 /* Enlace «Saltar al contenido»: contraste AA en ambos temas. */
 .skip-link { background: #7d3cf0; color: #fff; }
 [data-theme='light'] .skip-link { background: #14120e; color: #f7f0dc; }
+
+/* ---------- Panel de administración ---------- */
+
+.admin-page { display: grid; gap: var(--space-5); }
+.admin-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: var(--space-4); align-items: start; }
+@media (max-width: 1060px) { .admin-cols { grid-template-columns: 1fr; } }
+.admin-card { display: grid; gap: var(--space-4); padding: var(--space-5); border-radius: var(--r-lg); background: var(--glass); box-shadow: var(--glass-edge); min-width: 0; }
+.admin-card h2 { margin: 0; display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-lg); }
+.admin-card header p { margin: var(--space-1) 0 0; font-size: var(--fs-sm); }
+.admin-card-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--space-3); }
+.admin-card-head .pill-btn, .admin-actions .pill-btn { display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch-min); }
+.admin-status { margin: 0; display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-radius: var(--r-md); background: var(--surface); font-size: var(--fs-sm); }
+.admin-status.ok { background: rgba(47, 138, 78, 0.16); }
+.admin-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
+.admin-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.admin-list li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--r-md); background: var(--surface); }
+.admin-row-main { flex: 1 1 220px; display: grid; gap: 2px; min-width: 0; }
+.admin-row-main span, .admin-row-main b { overflow-wrap: anywhere; }
+.admin-row-main p { margin: var(--space-1) 0 0; font-size: var(--fs-sm); color: var(--text-2); }
+.chip-status { padding: 3px 10px; border-radius: var(--r-pill); font: 600 var(--fs-xs)/1.4 var(--font-body); background: var(--surface-3); }
+.chip-status.s-approved { background: rgba(47, 138, 78, 0.22); }
+.chip-status.s-rejected { background: rgba(220, 70, 70, 0.2); }
+.admin-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: var(--space-3); }
+.admin-grid li { position: relative; overflow: hidden; aspect-ratio: 4 / 5; border-radius: var(--r-md); background: var(--surface); }
+.admin-grid img, .admin-grid video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.admin-grid li.is-hidden img, .admin-grid li.is-hidden video { opacity: 0.35; filter: grayscale(1); }
+.admin-grid-meta { position: absolute; inset: auto 0 0 0; display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: var(--space-2); background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.7)); }
+.admin-grid-meta .chip-status { color: #fff; }
+.admin-grid-meta .pill-btn { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 10px; font-size: 13px; }
+@media (pointer: coarse) { .admin-grid-meta .pill-btn { min-height: var(--touch-min); } }

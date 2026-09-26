@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { requestPasswordReset, signIn, signUp, updatePassword } from '@/lib/auth';
 import { COPY } from '@/lib/copy';
+import { storage } from '@/lib/providers';
+import { requestAccess } from '@/lib/role';
 import { toast } from '@/lib/toast';
 import { useDialog } from '@/lib/useDialog';
 import Avatar from './Avatar';
@@ -47,6 +49,8 @@ export default function AuthModal({ mode: initialMode = 'signin', reason, allowS
         await signIn(email.trim(), password);
         onClose();
       } else if (mode === 'signup') {
+        // Sin registro abierto, solo pueden crear cuenta los emails con solicitud aprobada.
+        if (!allowSignup && !(await storage.signupAllowed(email.trim()))) { setError(COPY.access.notApproved); return; }
         const active = await signUp(email.trim(), password);
         if (active) { toast(t.done.welcome, { tone: 'success' }); onClose(); } else setDone(t.done.signup);
       } else if (mode === 'reset') {
@@ -106,7 +110,8 @@ export default function AuthModal({ mode: initialMode = 'signin', reason, allowS
           )}
 
           <footer className="auth-switch">
-            {mode === 'signin' && allowSignup && <button type="button" className="link-btn" onClick={() => switchMode('signup')}>{t.toSignup}</button>}
+            {mode === 'signin' && <button type="button" className="link-btn" onClick={() => switchMode('signup')}>{t.toSignup}</button>}
+            {(mode === 'signin' || (mode === 'signup' && error)) && <button type="button" className="link-btn" onClick={requestAccess}>{COPY.access.requestLink}</button>}
             {mode === 'signup' && <button type="button" className="link-btn" onClick={() => switchMode('signin')}>{t.toSignin}</button>}
             {(mode === 'reset' || (done && mode === 'signup')) && <button type="button" className="link-btn" onClick={() => switchMode('signin')}>{t.back}</button>}
           </footer>

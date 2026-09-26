@@ -12,6 +12,7 @@ import { toast } from '@/lib/toast';
 import { useDialog } from '@/lib/useDialog';
 import { useMascotMood } from '@/lib/mascot';
 import { useCharacters, withDefaultAvatar } from '@/lib/characters';
+import { requestAccess, useRole } from '@/lib/role';
 import Avatar from './Avatar';
 import {
   ColorField, ColorsField, EnumField, MediaField, MediaListField, NumberField, PresetField, PromptField,
@@ -74,6 +75,7 @@ function initialState(studio, seed) {
 }
 
 export default function Composer({ studio, seed, onModelChange }) {
+  const { canCreate } = useRole();
   const [start] = useState(() => initialState(studio, seed));
   const [modelId, setModelId] = useState(start.modelId);
   const [values, setValues] = useState(start.values);
@@ -197,6 +199,7 @@ export default function Composer({ studio, seed, onModelChange }) {
   }
 
   function generate() {
+    if (!canCreate) { requestAccess(); return; }
     if (uploading) return;
     const problems = validatePayload(model.schema, payload);
     let then = null;
@@ -387,7 +390,7 @@ export default function Composer({ studio, seed, onModelChange }) {
           <span className="cost mono" title={t.cost.hint} aria-live="polite">{mood === 'thinking' || mood === 'offline' ? COPY.avatar.moods[mood] : cost}</span>
         </div>
         <button type="button" className={`generate ${flash ? 'flash' : ''}`} onClick={generate} disabled={uploading} aria-busy={uploading}>
-          {uploading ? t.uploading : flash ? t.sent : total > 1 ? t.generateN(total) : t.generate}
+          {!canCreate ? <><Icon name="user" size={18} /> {COPY.access.generate}</> : uploading ? t.uploading : flash ? t.sent : total > 1 ? t.generateN(total) : t.generate}
         </button>
       </footer>
 

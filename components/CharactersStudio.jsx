@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { forgetCharacter, getDefaultAvatarId, importCharacter, setDefaultAvatar, trainCharacter, useCharacters } from '@/lib/characters';
 import { friendlyError } from '@/lib/errors';
 import { COPY } from '@/lib/copy';
+import { requestAccess, useRole } from '@/lib/role';
 import { toast } from '@/lib/toast';
 import { MediaListField } from './fields';
 import Avatar from './Avatar';
@@ -18,6 +19,7 @@ const imagesField = {
 
 // Tu avatar (Soul ID): guía en 3 pasos, estados de entrenamiento y avatar principal.
 export default function CharactersStudio({ onUse }) {
+  const { canCreate } = useRole();
   const characters = useCharacters();
   const [name, setName] = useState('');
   const [version, setVersion] = useState('v2');
@@ -33,6 +35,7 @@ export default function CharactersStudio({ onUse }) {
 
   async function submit(e) {
     e.preventDefault();
+    if (!canCreate) { requestAccess(); return; }
     setError(null);
     if (!name.trim()) return setError(t.errors.name);
     if (!images.length) return setError(t.errors.photos);
@@ -110,7 +113,7 @@ export default function CharactersStudio({ onUse }) {
         <footer className="panel-foot">
           <div className="foot-status"><Avatar size="xs" mood={training ? 'thinking' : 'idle'} /><span className="cost mono">{training ? t.training : t.defaultHint}</span></div>
           <button type="submit" className="generate" disabled={busy || uploading} aria-busy={busy || uploading}>
-            {uploading ? COPY.composer.uploading : busy ? t.sending : t.train}
+            {!canCreate ? COPY.access.generate : uploading ? COPY.composer.uploading : busy ? t.sending : t.train}
           </button>
         </footer>
       </form>
