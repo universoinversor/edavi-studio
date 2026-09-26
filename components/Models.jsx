@@ -19,9 +19,14 @@ function hue(id) {
   return h;
 }
 
-function FamilyCard({ family, studio, badge, onOpen }) {
+const MAX_MODES = 4;
+
+export function FamilyCard({ family, studio, badge, onOpen }) {
   const h = hue(family.id);
   const [hover, setHover] = useState(false);
+  const [allModes, setAllModes] = useState(false);
+  const extra = family.models.length - MAX_MODES;
+  const modes = allModes || extra <= 1 ? family.models : family.models.slice(0, MAX_MODES);
   const example = useMemo(() => exampleFor(family, CATALOG), [family]);
   return (
     <article className={`mcard ${example ? 'has-example' : ''}`} style={/** @type {any} */ ({ '--h': h })}
@@ -42,13 +47,20 @@ function FamilyCard({ family, studio, badge, onOpen }) {
         <h3 className="mcard-name">{family.name}</h3>
         <p className="mcard-desc">{family.description}</p>
         <ul className="mcard-modes" aria-label={t.modes(family.models.length)}>
-          {family.models.map((m) => (
+          {modes.map((m) => (
             <li key={m.id}>
               <button type="button" onClick={() => onOpen(studio, m.id)} aria-label={t.openMode(family.name, workflowLabel(m.workflow))}>
                 {workflowLabel(m.workflow)}
               </button>
             </li>
           ))}
+          {extra > 1 && (
+            <li>
+              <button type="button" className="mcard-more" onClick={() => setAllModes((v) => !v)} aria-expanded={allModes}>
+                {allModes ? t.lessModes : t.moreModes(extra)}
+              </button>
+            </li>
+          )}
         </ul>
       </div>
     </article>

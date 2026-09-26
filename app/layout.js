@@ -11,6 +11,7 @@ import './theme.css';
 import './polish.css';
 import './system.css';
 import './console.css';
+import './home.css';
 
 const display = Anton({ subsets: ['latin'], weight: '400', variable: '--font-display' });
 const body = Geist({ subsets: ['latin'], variable: '--font-body' });

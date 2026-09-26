@@ -19,8 +19,8 @@ function displayName(session) {
 }
 
 // Cabecera del panel: saludo y métricas de actividad (estilo consola).
-/** @param {{ onOpen: (id: string) => void, compact?: boolean }} props */
-export default function Dashboard({ onOpen, compact = false }) {
+/** @param {{ onOpen: (id: string) => void, compact?: boolean, statsOnly?: boolean }} props */
+export default function Dashboard({ onOpen, compact = false, statsOnly = false }) {
   const jobs = useJobs();
   const { session } = useAuth();
   const mood = useMascotMood();
@@ -47,8 +47,8 @@ export default function Dashboard({ onOpen, compact = false }) {
   }, [jobs]);
 
   return (
-    <section className="dash" aria-labelledby="dash-title">
-      <div className="dash-head">
+    <section className="dash" aria-labelledby={statsOnly ? undefined : 'dash-title'} aria-label={statsOnly ? t.chart(DAYS) : undefined}>
+      {!statsOnly && <div className="dash-head">
         <h1 id="dash-title" className="dash-greet">
           <span>{hour === null ? ' ' : `${t.greeting(hour)},`}</span>
           <span className="dash-name"><Avatar size="xs" mood={mood} /> {displayName(session)}</span>
@@ -57,7 +57,7 @@ export default function Dashboard({ onOpen, compact = false }) {
           <button type="button" className="pill-btn" onClick={() => onOpen('models')}><Icon name="layers" size={16} /> {t.models}</button>
           {!compact && <button type="button" className="pill-btn" onClick={() => onOpen('library')}><Icon name="grid" size={16} /> {t.library}</button>}
         </div>
-      </div>
+      </div>}
 
       {!compact && <div className="dash-stats">
         <div className="stat stat-accent">

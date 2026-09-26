@@ -346,7 +346,7 @@ export default function Studio() {
             ) : (
               <div className="workspace">
                 <Composer key={studio} studio={studio} seed={seeds[studio]} onModelChange={(id) => rememberModel(studio, id)} />
-                <Gallery studio={studio} onReuse={onReuse} onUseAsInput={onUseAsInput} />
+                <Gallery studio={studio} onReuse={onReuse} onUseAsInput={onUseAsInput} onPickModel={(id) => plant(studio, id, {})} />
               </div>
             )}
           </>

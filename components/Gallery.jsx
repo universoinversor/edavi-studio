@@ -4,13 +4,13 @@ import { archiveJob, cancelJob, clearFinished, removeJob, toggleFavorite, useJob
 import { useAuth } from '@/lib/auth';
 import { statusLabel, friendlyError } from '@/lib/errors';
 import { TERMINAL } from '@/lib/schema';
-import { workflowLabel } from '@/lib/catalog';
+import { familiesForStudio, models as CATALOG, workflowLabel } from '@/lib/catalog';
 import { COPY } from '@/lib/copy';
 import { toast } from '@/lib/toast';
 import { Lightbox, Media, download, fileName } from './media';
 import Avatar from './Avatar';
 import ExampleMedia from './ExampleMedia';
-import { exampleForEndpoint } from '@/lib/examples';
+import { exampleFor, exampleForEndpoint } from '@/lib/examples';
 import Portal from './Portal';
 import Icon from './Icon';
 
@@ -115,7 +115,31 @@ export function Frame({ job, index, now, onReuse, onUseAsInput, onOpen, loggedIn
   );
 }
 
-function HowItWorks({ studio }) {
+/** @param {{ studio: string, onPickModel?: (id: string) => void }} props */
+function StudioModels({ studio, onPickModel }) {
+  const [hover, setHover] = useState(null);
+  const families = useMemo(() => familiesForStudio(studio), [studio]);
+  if (!onPickModel) return null;
+  return (
+    <section className="studio-models" aria-labelledby="studio-models-title">
+      <h3 id="studio-models-title">{t.studioModels(families.length)}</h3>
+      <ul>
+        {families.map((f) => (
+          <li key={f.id}>
+            <button type="button" className="smodel" onClick={() => onPickModel(f.models[0].id)}
+              onMouseEnter={() => setHover(f.id)} onMouseLeave={() => setHover(null)} onFocus={() => setHover(f.id)} onBlur={() => setHover(null)}>
+              <span className="smodel-media"><ExampleMedia example={exampleFor(f, CATALOG)} playing={hover === f.id} credit={false} /></span>
+              <span className="smodel-text"><b>{f.name}</b><span className="dim">{COPY.models.modes(f.models.length)}</span></span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** @param {{ studio: string, onPickModel?: (id: string) => void }} props */
+function HowItWorks({ studio, onPickModel }) {
   const how = t.howSteps[studio] || t.howSteps.image;
   const [hover, setHover] = useState(-1);
   const examples = HOW_EXAMPLES[studio] || HOW_EXAMPLES.image;
@@ -135,11 +159,12 @@ function HowItWorks({ studio }) {
           </article>
         ))}
       </div>
+      <StudioModels studio={studio} onPickModel={onPickModel} />
     </div>
   );
 }
 
-export default function Gallery({ studio, onReuse, onUseAsInput }) {
+export default function Gallery({ studio, onReuse, onUseAsInput, onPickModel }) {
   const rawJobs = useJobs();
   const jobs = useMemo(() => rawJobs.map(withArchive), [rawJobs]);
   const { session } = useAuth();
@@ -184,7 +209,7 @@ export default function Gallery({ studio, onReuse, onUseAsInput }) {
       </header>
 
       {tab === 'how' ? (
-        <HowItWorks studio={studio} />
+        <HowItWorks studio={studio} onPickModel={onPickModel} />
       ) : shown.length === 0 ? (
         <div className="empty">
           <Avatar mood="empty" size="md" />
