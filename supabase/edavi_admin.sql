@@ -88,3 +88,16 @@ revoke all on function public.edavi_set_provider_key(text), public.edavi_get_pro
 grant execute on function public.edavi_set_provider_key(text), public.edavi_get_provider_key(), public.edavi_provider_key_status() to authenticated;
 revoke all on function public.edavi_is_admin(), public.edavi_user_is_admin(uuid), public.edavi_signup_allowed(text) from public;
 grant execute on function public.edavi_is_admin(), public.edavi_user_is_admin(uuid), public.edavi_signup_allowed(text) to anon, authenticated;
+
+-- Creadores: emails con solicitud aprobada generan con SU PROPIA clave de Higgsfield.
+create or replace function public.edavi_can_use_own_key()
+returns boolean language sql stable security definer set search_path = ''
+as $$
+  select exists (
+    select 1 from public.edavi_signup_requests r
+    where r.status = 'approved'
+      and lower(r.email) = lower(coalesce((select auth.jwt() ->> 'email'), ''))
+  )
+$$;
+revoke all on function public.edavi_can_use_own_key() from public, anon;
+grant execute on function public.edavi_can_use_own_key() to authenticated;

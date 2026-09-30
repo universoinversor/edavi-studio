@@ -88,8 +88,8 @@ export default function Studio() {
   const [more, setMore] = useState(false);
   const [onboarding, setOnboarding] = useState(false);
   const [requesting, setRequesting] = useState(false);
-  const { isAdmin, role, ready: roleReady } = useRole();
-  const guest = authEnabled && roleReady && !isAdmin;
+  const { isAdmin, isCreator, canCreate, role, ready: roleReady } = useRole();
+  const guest = authEnabled && roleReady && !canCreate;
   const { session } = useAuth();
   const theme = useTheme();
   const online = useOnline();
@@ -119,7 +119,8 @@ export default function Studio() {
     syncKey();
     const onAuthRequired = (e) => {
       if (e.detail?.code === 'login') { setAuth({ mode: 'signin', reason: COPY.auth.required }); return; }
-      setSettings({ open: true, reason: e.detail?.code === 'password' ? COPY.errors.password : COPY.errors.badCredentials });
+      const code = e.detail?.code;
+      setSettings({ open: true, reason: code === 'password' ? COPY.errors.password : code === 'no_credentials' ? COPY.errors.noCredentials : COPY.errors.badCredentials });
     };
     const onRecovery = () => setAuth({ mode: 'recovery' });
     const onRequest = () => { setAuth(null); setRequesting(true); };
@@ -314,6 +315,11 @@ export default function Studio() {
             <b>{COPY.access[role === 'member' ? 'member' : 'guest'][0]}</b> {COPY.access[role === 'member' ? 'member' : 'guest'][1]} <Icon name="arrowRight" size={16} />
           </button>
         )}
+        {isCreator && !hasOwnKey && (
+          <button type="button" className="notice notice-action" onClick={openSettings}>
+            <b>{t.notices.creatorKey[0]}</b> {t.notices.creatorKey[1]} <Icon name="arrowRight" size={16} />
+          </button>
+        )}
         {needsKey && (
           <button type="button" className="notice notice-action" onClick={openSettings}>
             <b>{t.notices.key[0]}</b> {t.notices.key[1]} <Icon name="arrowRight" size={16} />
@@ -326,7 +332,7 @@ export default function Studio() {
 
         <ErrorBoundary resetKey={studio}>
         {studio === 'explore' ? (
-          <Explore onOpen={open} showcase={!isAdmin && authEnabled} />
+          <Explore onOpen={open} showcase={!canCreate && authEnabled} />
         ) : studio === 'models' ? (
           <Models onOpen={open} />
         ) : studio === 'admin' ? (
