@@ -6,6 +6,7 @@ import ExampleMedia from './ExampleMedia';
 import { COPY } from '@/lib/copy';
 import Avatar from './Avatar';
 import Icon from './Icon';
+import ModelIcon from './ModelIcon';
 
 const t = COPY.models;
 const KINDS = COPY.explore.kinds;
@@ -44,7 +45,7 @@ export function FamilyCard({ family, studio, badge, onOpen }) {
         {example && <span className="ex-credit" aria-hidden>{COPY.examples.credit}</span>}
       </button>
       <div className="mcard-body">
-        <h3 className="mcard-name">{family.name}</h3>
+        <h3 className="mcard-name"><ModelIcon name={family.name} size={18} /> {family.name}</h3>
         <p className="mcard-desc">{family.description}</p>
         <ul className="mcard-modes" aria-label={t.modes(family.models.length)}>
           {modes.map((m) => (

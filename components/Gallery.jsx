@@ -10,6 +10,7 @@ import { toast } from '@/lib/toast';
 import { Lightbox, Media, download, fileName } from './media';
 import Avatar from './Avatar';
 import ExampleMedia from './ExampleMedia';
+import ModelIcon from './ModelIcon';
 import { exampleFor, exampleForEndpoint } from '@/lib/examples';
 import Portal from './Portal';
 import Icon from './Icon';
@@ -129,7 +130,7 @@ function StudioModels({ studio, onPickModel }) {
             <button type="button" className="smodel" onClick={() => onPickModel(f.models[0].id)}
               onMouseEnter={() => setHover(f.id)} onMouseLeave={() => setHover(null)} onFocus={() => setHover(f.id)} onBlur={() => setHover(null)}>
               <span className="smodel-media"><ExampleMedia example={exampleFor(f, CATALOG)} playing={hover === f.id} credit={false} /></span>
-              <span className="smodel-text"><b>{f.name}</b><span className="dim">{COPY.models.modes(f.models.length)}</span></span>
+              <span className="smodel-text"><b><ModelIcon name={f.name} size={14} /> {f.name}</b><span className="dim">{COPY.models.modes(f.models.length)}</span></span>
             </button>
           </li>
         ))}

@@ -21,6 +21,7 @@ import {
 import PromptLibrary from './PromptLibrary';
 import Portal from './Portal';
 import Icon from './Icon';
+import ModelIcon from './ModelIcon';
 
 const t = COPY.composer;
 const ANIMATE_DEFAULT = 'seedance-2-5/image-to-video';
@@ -43,7 +44,7 @@ function FamilySheet({ studio, currentFamily, onPick, onClose }) {
               <button type="button" className={`family-row ${f.id === currentFamily ? 'on' : ''}`} onClick={() => onPick(f.models[0].id)}
                 aria-current={f.id === currentFamily ? 'true' : undefined}>
                 <span className="mono dim">{String(i + 1).padStart(2, '0')}</span>
-                <span className="family-name">{f.name}</span>
+                <span className="family-name"><ModelIcon name={f.name} size={16} /> {f.name}</span>
                 <span className="family-desc">{f.description}</span>
                 <span className="mono dim">{t.modesCount(f.models.length)}</span>
               </button>

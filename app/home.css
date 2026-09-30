@@ -173,3 +173,12 @@
 .premiere-credits { font-size: var(--fs-sm); }
 .premiere-player { width: 100%; aspect-ratio: 16 / 9; border-radius: var(--r-lg); background: #000; box-shadow: 0 30px 80px -30px rgba(var(--a-rgb), 0.6); }
 @media (max-width: 900px) { .premiere { grid-template-columns: 1fr; } }
+
+/* Iconos de familia de modelo (SVG como máscara → toman el color del tema). */
+.micon {
+  display: inline-block; flex: none; vertical-align: -0.15em;
+  background: var(--accent-hi);
+  -webkit-mask: var(--micon) center / contain no-repeat; mask: var(--micon) center / contain no-repeat;
+}
+.mcard-name, .family-name, .smodel-text b { display: inline-flex; align-items: center; gap: 8px; }
+[data-theme='light'] .micon { background: var(--accent-hi); }

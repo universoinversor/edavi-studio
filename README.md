@@ -123,6 +123,12 @@ tests/                 Pruebas (npm test)
 docs/                  Arquitectura, design system y QA
 ```
 
+## Recursos de Higgsfield
+
+- Iconos de familias de modelos: plantilla oficial [higgsfield-ai/app-templates](https://github.com/higgsfield-ai/app-templates).
+- Plantillas y consejos de prompts «Guía Higgsfield»: [higgsfield-ai/skills](https://github.com/higgsfield-ai/skills) (MIT, © 2026 Higgsfield AI).
+- Ejemplos de cada modelo: catálogo público de Higgsfield (enlazados, no copiados).
+
 ## Crédito y licencia
 
 **© 2026 EDAVI.** Publicado bajo la [licencia MIT](LICENSE).
